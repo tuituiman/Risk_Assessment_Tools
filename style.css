@@ -1670,13 +1670,71 @@ textarea.form-control {
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.1);
 }
 
-/* Mobile Responsive */
+/* Mobile View Switcher Tab (Hidden on PC by default) */
+.mobile-tab-nav {
+  display: none;
+}
+
+/* Tablet & Mobile Responsive (<= 1024px) */
 @media (max-width: 1024px) {
+  .mobile-tab-nav {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 8px 16px;
+    gap: 10px;
+    border-bottom: 1.5px solid rgba(225, 29, 72, 0.15);
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.06);
+  }
+
+  .mobile-tab-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid rgba(225, 29, 72, 0.2);
+    background: #fff5f7;
+    color: #881337;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mobile-tab-btn:hover {
+    background: #ffe4e6;
+  }
+
+  .mobile-tab-btn.active {
+    background: linear-gradient(135deg, #f43f5e, #e11d48);
+    color: #ffffff;
+    border-color: #e11d48;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.28);
+  }
+
+  .mobile-risk-badge {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: inherit;
+    font-weight: 700;
+  }
+
   .main-wrapper {
     grid-template-columns: 1fr;
     height: auto;
     overflow: visible;
-    padding-bottom: 90px;
+    padding: 16px 14px 60px;
+    gap: 20px;
   }
 
   body {
@@ -1689,6 +1747,88 @@ textarea.form-control {
     height: auto;
     overflow: visible;
     padding-right: 0;
+  }
+
+  .sidebar-sticky {
+    position: static;
+  }
+}
+
+/* Smartphone Responsive (<= 640px) */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .brand-section {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .brand-logo {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+
+  .brand-text h1 {
+    font-size: 1.1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    justify-content: center;
+  }
+
+  .glass-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .card-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .audit-header-actions {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+  }
+
+  .audit-header-actions .btn {
+    flex: 1;
+    font-size: 0.78rem;
+    padding: 6px 8px;
+  }
+
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .site-footer-badge {
+    font-size: 0.82rem;
+    padding: 8px 12px;
   }
 }
 
