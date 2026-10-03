@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IRA Assistant - ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข (WHO IRA)</title>
+  <meta name="description"
+    content="ระบบช่วยประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น ตามเกณฑ์ Initial Risk Assessment (IRA) ขององค์การอนามัยโลก พร้อมบันทึก Google Sheets และสรุปบทบรรยายด้วย Typhoon AI">
+
+  <!-- Google Fonts: Prompt & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=2.5">
+</head>
+
+<body>
+
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo" aria-hidden="true">🛡️</div>
+        <div class="brand-text">
+          <h1>IRA Assistant <span class="brand-badge">WHO Standard</span></h1>
+          <div class="brand-sub">ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น (Initial Risk Assessment)
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnPresetWuhan" class="btn btn-outline btn-sm" title="โหลดข้อมูลกรณีศึกษาตัวอย่าง">
+          🧪 ตัวอย่างเคสอู่ฮั่น
+        </button>
+        <button id="btnOpenSettings" class="btn btn-secondary btn-sm" title="ตั้งค่า Typhoon AI และ Google Sheets">
+          ⚙️ ตั้งค่า API & ชีต
+        </button>
+        <button id="btnResetForm" class="btn btn-danger btn-sm" title="ล้างข้อมูลเริ่มใหม่">
+          🔄 เริ่มใหม่
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile View Switcher Tab Navigation -->
+  <nav class="mobile-tab-nav" id="mobileTabNav" aria-label="Mobile Navigation">
+    <button class="mobile-tab-btn active" id="btnMobileTabForm">
+      📋 1. แบบประเมิน (Form)
+    </button>
+    <button class="mobile-tab-btn" id="btnMobileTabResult">
+      📊 2. ผลลัพธ์ & สรุป AI <span class="mobile-risk-badge" id="mobileRiskBadge">ปานกลาง</span>
+    </button>
+  </nav>
+
+  <!-- Main Content Layout (Desktop: Dual Independent Scroll) -->
+  <main class="main-wrapper" id="mainWrapper">
+
+    <!-- Left Column: Assessment Wizard & Forms -->
+    <section class="wizard-col" id="wizardCol">
+
+      <!-- Event Metadata Form Card -->
+      <div class="glass-card event-info-box">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div class="step-badge-tag">ข้อมูลทั่วไปของเหตุการณ์ (Event Profile)</div>
+          <div id="eventEditStatusTag"
+            style="display: inline-flex; align-items: center; gap: 6px; background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225, 29, 72, 0.25); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; color: var(--primary);">
+            <span><span id="eventModeLabel">🏷️ รหัสถัดไป: </span><strong id="activeEventIdText">IRA-001-2026</strong>
+              <span id="eventSubNote" style="color: #64748b;">(สร้างใหม่อัตโนมัติ)</span></span>
+            <button id="btnResetToNewCase" class="btn btn-outline btn-sm"
+              style="display: none; padding: 1px 8px; font-size: 0.72rem; margin-left: 6px;"
+              title="เริ่มเรื่องใหม่ / เปิด ID ใหม่">+ เปิด ID ใหม่</button>
+          </div>
+        </div>
+        <div class="event-info-grid">
+          <div class="form-group">
+            <label for="eventName">ชื่อเหตุการณ์ / โรคที่สงสัย *</label>
+            <input type="text" id="eventName" class="form-control"
+              placeholder="เช่น การระบาดของโรคทางเดินหายใจเฉียบพลัน">
+          </div>
+          <div class="form-group">
+            <label for="location">พื้นที่เกิดเหตุ / จังหวัด *</label>
+            <input type="text" id="location" class="form-control"
+              placeholder="เช่น อ.เมือง จ.เชียงใหม่ หรือ ด่านควบคุมโรค">
+          </div>
+          <div class="form-group">
+            <label for="assessmentDate">วันที่ประเมิน *</label>
+            <input type="date" id="assessmentDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="assessorName">ผู้ประเมิน / หน่วยงาน</label>
+            <input type="text" id="assessorName" class="form-control" placeholder="เช่น ทีม SAT สคร. / กองควบคุมโรค">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="clinicalDetails">สรุปอาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น</label>
+          <textarea id="clinicalDetails" class="form-control"
+            placeholder="ระบุจำนวนผู้ป่วย, อาการเด่น, การตรวจพบเบื้องต้น, ประวัติการสัมผัส..."></textarea>
+        </div>
+      </div>
+
+      <!-- Dynamic Flow Checklist Card -->
+      <div class="glass-card wizard-card">
+
+        <!-- Live Flow Breadcrumb / Navigation Map -->
+        <div class="flow-breadcrumb" id="flowBreadcrumb">
+          <span style="font-weight: 600; color: #94a3b8;">🗺️ เส้นทาง Flow:</span>
+          <span class="flow-step-tag current" id="flowTag_q1">1. ภัยคุกคามสูง</span>
+          <span class="flow-arrow" id="flowArrow_q2">➔</span>
+          <span class="flow-step-tag" id="flowTag_q2">2. การสัมผัส</span>
+          <span class="flow-arrow" id="flowArrow_q3">➔</span>
+          <span class="flow-step-tag" id="flowTag_q3">3. ความรุนแรง</span>
+          <span class="flow-arrow" id="flowArrow_q4">➔</span>
+          <span class="flow-step-tag" id="flowTag_q4">4. การแพร่กระจาย</span>
+          <span class="flow-arrow" id="flowArrow_q5">➔</span>
+          <span class="flow-step-tag" id="flowTag_q5">5. ศักยภาพระบบ</span>
+        </div>
+
+        <!-- ================= QUESTION 1: High Threat Hazard ================= -->
+        <div class="dynamic-question-card" id="card_q1">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 1 จากเกณฑ์ WHO IRA</span>
+            <h2>1. โรค/ภัยที่เป็นภัยคุกคามระดับสูง (High Threat Hazard)</h2>
+            <p class="step-subtitle">
+              ประเมินว่าเหตุการณ์นี้มีสาเหตุหรือสงสัยว่ามีสาเหตุจากเชื้อก่อโรคที่เป็นภัยคุกคามระดับสูงที่กำหนดไว้หรือไม่
+            </p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>เหตุการณ์นี้เกี่ยวข้องกับเชื้อโรคที่เป็นภัยคุกคามระดับสูงหรือไม่?</span>
+              <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q1', this)">
+                <span class="btn-subdrawer-icon">📋</span>
+                <span class="drawer-btn-label" data-expand-text="ดูรายชื่อโรค / บันทึกข้อย่อย"
+                  data-collapse-text="ย่อเก็บรายชื่อโรค / ข้อย่อย">ดูรายชื่อโรค / บันทึกข้อย่อย</span>
+                <span class="drawer-chevron">▼</span>
+              </button>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card" id="opt_q1_yes">
+                <input type="radio" name="q1_highThreat" value="yes">
+                <span class="opt-text">ใช่ (Yes) ➔ ข้ามไปข้อ 5.1 ทันที</span>
+              </label>
+              <label class="opt-card selected" id="opt_q1_no">
+                <input type="radio" name="q1_highThreat" value="no" checked>
+                <span class="opt-text">ไม่ใช่ / ไม่แน่ชัด (No/Unk)</span>
+              </label>
+            </div>
+
+            <!-- Dynamic Skip Banner when Q1 is Yes -->
+            <div class="flow-skip-banner" id="banner_q1_skip" style="display: none; margin-top: 14px;">
+              <span>⏭️ <strong>ตาม Flow ของ WHO IRA:</strong> เนื่องจากเป็นภัยคุกคามระดับสูง
+                ระบบจะ<strong>ข้ามและซ่อนข้อ 2, 3, 4 และ 5.2 ทั้งหมด</strong> และมุ่งตรงไปยัง<strong>ข้อ 5.1
+                  (การประเมินศักยภาพ)</strong> เพื่อสรุปผลความเสี่ยงทันที</span>
+            </div>
+
+            <!-- Sub Checklist & Notes Drawer -->
+            <div id="drawer_q1" class="sub-criteria-drawer" style="display: none;">
+              <div class="drawer-header-info">
+                <span>เลือกและบันทึกรายละเอียดโรคที่เข้าข่าย (ตามสไลด์หน้า 30):</span>
+                <span class="calc-auto-badge">⚡ คำนวณข้อย่อย ➔ ข้อหลักให้อัตโนมัติ</span>
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title">1.1 โรคติดต่ออันตราย ตาม พรบ.โรคติดต่อ (13 โรค เช่น อีโบลา,
+                    เมอร์ส)</span>
+                  <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_1">
+                    <label class="sub-choice-label" id="lbl_sub_d1_1_yes"><input type="radio" name="sub_d1_1"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d1_1_no"><input type="radio" name="sub_d1_1"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d1_1" class="sub-criterion-input"
+                  placeholder="ทดบันทึกเพิ่มเติม เช่น ตรวจพบสายพันธุ์, ผลตรวจยืนยันทาง Lab...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title">1.2 New human coronavirus (เช่น SARS-CoV-2, SARS, MERS)</span>
+                  <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_2">
+                    <label class="sub-choice-label" id="lbl_sub_d1_2_yes"><input type="radio" name="sub_d1_2"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d1_2_no"><input type="radio" name="sub_d1_2"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d1_2" class="sub-criterion-input"
+                  placeholder="ทดบันทึกเพิ่มเติม เช่น สงสัยเชื้อสายพันธุ์ใหม่...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title">1.3 Novel human influenza virus (ไข้หวัดใหญ่สายพันธุ์ใหม่)</span>
+                  <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_3">
+                    <label class="sub-choice-label" id="lbl_sub_d1_3_yes"><input type="radio" name="sub_d1_3"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d1_3_no"><input type="radio" name="sub_d1_3"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d1_3" class="sub-criterion-input" placeholder="ทดบันทึกเพิ่มเติม...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title">1.4 Wild-type polio (โปลิโอสายพันธุ์ธรรมชาติ) / Rift valley fever /
+                    Anthrax bioterrorism</span>
+                  <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_4">
+                    <label class="sub-choice-label" id="lbl_sub_d1_4_yes"><input type="radio" name="sub_d1_4"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d1_4_no"><input type="radio" name="sub_d1_4"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d1_4" class="sub-criterion-input" placeholder="ทดบันทึกเพิ่มเติม...">
+              </div>
+            </div>
+
+            <!-- Main Question Note Box -->
+            <div class="notes-container">
+              <label class="notes-label" for="note_q1_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 1
+                (บันทึกช่วยจำสำหรับส่งต่อให้ Typhoon AI สรุป):</label>
+              <textarea id="note_q1_general" class="domain-notes-textarea"
+                placeholder="ระบุเหตุผล ข้อสังเกต หรือหลักฐานทางระบาดวิทยาที่ใช้ตอบข้อนี้..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 2: Exposure ================= -->
+        <div class="dynamic-question-card" id="card_q2">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 2 จากเกณฑ์ WHO IRA</span>
+            <h2>2. การสัมผัส (Exposure Assessment)</h2>
+            <p class="step-subtitle">ประเมินว่าประชาชนยังคงมีการสัมผัส มีปฏิสัมพันธ์ หรือเข้าใกล้กับภัยนั้นๆ
+              อย่างต่อเนื่องหรือไม่</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>มีแนวโน้มว่าประชาชนยังมีการสัมผัสต่อเนื่องกับภัยนั้นๆ หรือไม่?</span>
+              <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q2', this)">
+                <span class="btn-subdrawer-icon">📋</span>
+                <span class="drawer-btn-label" data-expand-text="บันทึกข้อย่อย (A, B, C)"
+                  data-collapse-text="ย่อเก็บข้อย่อย (A, B, C)">บันทึกข้อย่อย (A, B, C)</span>
+                <span class="drawer-chevron">▼</span>
+              </button>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card selected" id="opt_q2_yes">
+                <input type="radio" name="q2_exposure" value="yes" checked>
+                <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk) ➔ นำสู่ข้อ 3</span>
+              </label>
+              <label class="opt-card" id="opt_q2_no">
+                <input type="radio" name="q2_exposure" value="no">
+                <span class="opt-text">ไม่ใช่ (No) ➔ ข้ามไปข้อ 4.2</span>
+              </label>
+            </div>
+
+            <!-- Dynamic Skip Banner when Q2 is No -->
+            <div class="flow-skip-banner" id="banner_q2_skip" style="display: none; margin-top: 14px;">
+              <span>⏭️ <strong>ตาม Flow ของ WHO IRA:</strong> เมื่อไม่มีการสัมผัสต่อเนื่องแล้ว ระบบจะ<strong>ข้ามข้อ 3
+                  และ 4.1</strong> และมุ่งไปยัง<strong>ข้อ 4.2 (มีผู้ได้รับผลกระทบสะสมจำนวนมากหรือไม่)</strong></span>
+            </div>
+
+            <!-- Sub-criteria A, B, C Drawer -->
+            <div id="drawer_q2" class="sub-criteria-drawer" style="display: none;">
+              <div class="drawer-header-info">
+                <span>ปัจจัยพิจารณา 3 ด้าน (ต้องเข้าเกณฑ์ครบ A, B, C จึงถือว่ามีการสัมผัสสมบูรณ์):</span>
+                <span class="calc-auto-badge">⚡ คำนวณข้อย่อย ➔ ข้อหลักให้อัตโนมัติ</span>
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>A.</strong>
+                    เชื้อก่อโรคหรือต้นตอภัยยังคงมีอยู่ในพื้นที่</span>
+                  <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_a">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_a_yes"><input type="radio" name="sub_d2_a"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_a_no"><input type="radio" name="sub_d2_a" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d2_a" class="sub-criterion-input"
+                  placeholder="ทดบันทึก A เช่น ตลาดสดยังไม่ปิด, แหล่งน้ำยังปนเปื้อน...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>B.</strong> ประชาชนยังสัมผัสผ่านคน/สัตว์แพร่เชื้อ,
+                    แหล่งน้ำ/อาหาร, พาหะ หรือสิ่งแวดล้อม</span>
+                  <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_b">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_b_yes"><input type="radio" name="sub_d2_b"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_b_no"><input type="radio" name="sub_d2_b" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d2_b" class="sub-criterion-input"
+                  placeholder="ทดบันทึก B เช่น สัมผัสสัตว์ป่า, นั่งเครื่องบินร่วมกับผู้ป่วย...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>C.</strong> ประชาชนสามารถป่วย/แพร่เชื้อต่อได้
+                    (ไม่มีภูมิคุ้มกัน หรือสัมผัสสารเข้มข้น)</span>
+                  <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_c">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_c_yes"><input type="radio" name="sub_d2_c"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_c_no"><input type="radio" name="sub_d2_c" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d2_c" class="sub-criterion-input"
+                  placeholder="ทดบันทึก C เช่น อัตราการฉีดวัคซีนต่ำ, เป็นเชื้อกลุ่มใหม่ที่ยังไม่มีภูมิคุ้มกัน...">
+              </div>
+            </div>
+
+            <!-- Main Question Note Box -->
+            <div class="notes-container">
+              <label class="notes-label" for="note_q2_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 2
+                (การสัมผัส):</label>
+              <textarea id="note_q2_general" class="domain-notes-textarea"
+                placeholder="ระบุรายละเอียดระยะฟักตัว, มาตรการกักกันที่ทำไปแล้ว หรือพฤติกรรมเสี่ยงของประชาชน..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 3: Severity ================= -->
+        <div class="dynamic-question-card" id="card_q3">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 3 จากเกณฑ์ WHO IRA</span>
+            <h2>3. ความรุนแรงทางคลินิก (Severity Assessment)</h2>
+            <p class="step-subtitle">ประเมินความรุนแรงทางคลินิก การป่วยหนัก การเสียชีวิต และภาวะแทรกซ้อนของโรค</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>ความรุนแรงของโรคอยู่ในระดับปานกลางถึงสูงในประชาชนกลุ่มนี้หรือไม่?</span>
+              <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q3', this)">
+                <span class="btn-subdrawer-icon">📋</span>
+                <span class="drawer-btn-label" data-expand-text="บันทึกข้อย่อย (A, B, C)"
+                  data-collapse-text="ย่อเก็บข้อย่อย (A, B, C)">บันทึกข้อย่อย (A, B, C)</span>
+                <span class="drawer-chevron">▼</span>
+              </button>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card selected" id="opt_q3_yes">
+                <input type="radio" name="q3_severity" value="yes" checked>
+                <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk)</span>
+              </label>
+              <label class="opt-card" id="opt_q3_no">
+                <input type="radio" name="q3_severity" value="no">
+                <span class="opt-text">ไม่ใช่ (No - ความรุนแรงต่ำ)</span>
+              </label>
+            </div>
+
+            <!-- Sub-criteria A, B, C Drawer -->
+            <div id="drawer_q3" class="sub-criteria-drawer" style="display: none;">
+              <div class="drawer-header-info">
+                <span>เกณฑ์พิจารณา (เข้าเกณฑ์ A หรือ B หรือ C อย่างน้อย 1 ข้อ = ใช่):</span>
+                <span class="calc-auto-badge">⚡ คำนวณข้อย่อย ➔ ข้อหลักให้อัตโนมัติ</span>
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>A.</strong> อัตราป่วยตาย (CFR) อยู่ในระดับปานกลางถึงสูง
+                    (Moderate 1-10%, High >10%)</span>
+                  <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_a">
+                    <label class="sub-choice-label" id="lbl_sub_d3_a_yes"><input type="radio" name="sub_d3_a"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d3_a_no"><input type="radio" name="sub_d3_a"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d3_a" class="sub-criterion-input"
+                  placeholder="ทดบันทึก A เช่น อัตราป่วยตายประมาณ 2-3%...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>B.</strong> มีสัดส่วนผู้ป่วยภาวะวิกฤต (ICU) สูง
+                    หรือเกิดภาวะแทรกซ้อนรุนแรง/ระยะยาว</span>
+                  <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_b">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d3_b_yes"><input type="radio" name="sub_d3_b"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_b_no"><input type="radio" name="sub_d3_b" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d3_b" class="sub-criterion-input"
+                  placeholder="ทดบันทึก B เช่น มีผู้ป่วยปอดอักเสบขั้นรุนแรง 7 ราย (26%)...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>C.</strong>
+                    เหตุการณ์นี้มีอัตราป่วยหรืออัตราตายสูงกว่าปกติเมื่อเทียบกับอดีต</span>
+                  <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_c">
+                    <label class="sub-choice-label" id="lbl_sub_d3_c_yes"><input type="radio" name="sub_d3_c"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d3_c_no"><input type="radio" name="sub_d3_c"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d3_c" class="sub-criterion-input"
+                  placeholder="ทดบันทึก C เช่น สูงกว่าค่าเฉลี่ยปกติในฤดูกาลเดียวกัน...">
+              </div>
+            </div>
+
+            <!-- Main Question Note Box -->
+            <div class="notes-container">
+              <label class="notes-label" for="note_q3_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 3
+                (ความรุนแรง):</label>
+              <textarea id="note_q3_general" class="domain-notes-textarea"
+                placeholder="ระบุอาการสำคัญ, การใช้เครื่องช่วยหายใจ, ภาวะแทรกซ้อน..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 4.1: Future Spread Potential ================= -->
+        <div class="dynamic-question-card" id="card_q4_1">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 4.1 จากเกณฑ์ WHO IRA</span>
+            <h2>4.1 ศักยภาพการแพร่ระบาดในอนาคต (Spread Potential)</h2>
+            <p class="step-subtitle">ประเมินแนวโน้มว่าภัยจะแพร่กระจายในชุมชน หรือขยายไปยังพื้นที่อื่นๆ
+              ในประเทศหรือต่างประเทศ</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>คาดว่าในอนาคตจะมีผู้ป่วยจำนวนมาก หรือจะมีการกระจายไปยังหลายพื้นที่หรือไม่?</span>
+              <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q4_1', this)">
+                <span class="btn-subdrawer-icon">📋</span>
+                <span class="drawer-btn-label" data-expand-text="บันทึกข้อย่อย (A, B, C)"
+                  data-collapse-text="ย่อเก็บข้อย่อย (A, B, C)">บันทึกข้อย่อย (A, B, C)</span>
+                <span class="drawer-chevron">▼</span>
+              </button>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card selected" id="opt_q4_yes">
+                <input type="radio" name="q4_spread" value="yes" checked>
+                <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk)</span>
+              </label>
+              <label class="opt-card" id="opt_q4_no">
+                <input type="radio" name="q4_spread" value="no">
+                <span class="opt-text">ไม่ใช่ (No - ไม่แพร่กระจายเพิ่ม)</span>
+              </label>
+            </div>
+
+            <!-- Sub-criteria A, B, C Drawer -->
+            <div id="drawer_q4_1" class="sub-criteria-drawer" style="display: none;">
+              <div class="drawer-header-info">
+                <span>เกณฑ์พิจารณา (เข้าเกณฑ์ A หรือ B หรือ C อย่างน้อย 1 ข้อ = ใช่):</span>
+                <span class="calc-auto-badge">⚡ คำนวณข้อย่อย ➔ ข้อหลักให้อัตโนมัติ</span>
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>A.</strong> เชื้อติดต่อสูง +
+                    มีโอกาสสัมผัสบ่อย/รวมกลุ่มทำกิจกรรมร่วมกัน (Social mixing)</span>
+                  <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_a">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d4_a_yes"><input type="radio" name="sub_d4_a"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_a_no"><input type="radio" name="sub_d4_a" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d4_a" class="sub-criterion-input"
+                  placeholder="ทดบันทึก A เช่น มีเที่ยวบินตรงหลายเที่ยวต่อวัน, แหล่งชุมชนหนาแน่น...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>B.</strong> มีอัตราป่วย (Attack rate) สูง
+                    ผู้ป่วยรายใหม่เพิ่มขึ้นอย่างรวดเร็ว</span>
+                  <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_b">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d4_b_yes"><input type="radio" name="sub_d4_b"
+                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_b_no"><input type="radio" name="sub_d4_b" value="no">
+                      ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d4_b" class="sub-criterion-input"
+                  placeholder="ทดบันทึก B เช่น ผู้ป่วยเพิ่มขึ้นจาก 27 เป็น 44 รายใน 3 วัน...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>C.</strong> กรณีไม่ทราบเชื้อ
+                    แต่พบผู้ป่วยปานกลางถึงมากถูกรายงานในเวลาสั้นๆ</span>
+                  <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_c">
+                    <label class="sub-choice-label" id="lbl_sub_d4_c_yes"><input type="radio" name="sub_d4_c"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d4_c_no"><input type="radio" name="sub_d4_c"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d4_c" class="sub-criterion-input"
+                  placeholder="ทดบันทึก C เช่น คลัสเตอร์ผู้ป่วยระบาดเป็นกลุ่มก้อน...">
+              </div>
+            </div>
+
+            <!-- Main Question Note Box -->
+            <div class="notes-container">
+              <label class="notes-label" for="note_q4_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 4.1
+                (การแพร่กระจาย):</label>
+              <textarea id="note_q4_general" class="domain-notes-textarea"
+                placeholder="ระบุเส้นทางการเดินทาง การคมนาคม หรือปัจจัยเอื้อต่อการแพร่เชื้อ..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 4.2: Current Significant Affected ================= -->
+        <div class="dynamic-question-card hidden" id="card_q4_2">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 4.2 จากเกณฑ์ WHO IRA (กรณีไม่มีการสัมผัสแล้ว)</span>
+            <h2>4.2 ขนาดประชากรที่ได้รับผลกระทบปัจจุบัน</h2>
+            <p class="step-subtitle">พิจารณาขนาดของประชากรที่ได้รับผลกระทบ เมื่อการสัมผัสต้นตอโรคยุติลงแล้ว</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>ขณะนี้มีผู้ได้รับผลกระทบเป็นจำนวนมากหรือไม่ (เทียบกับค่าปกติ)?</span>
+            </div>
+            <div class="option-group">
+              <label class="opt-card" id="opt_q4_2_yes">
+                <input type="radio" name="q4_2_significant" value="yes">
+                <span class="opt-text">ใช่ (Yes - ได้รับผลกระทบมาก) ➔ นำสู่ข้อ 5.1</span>
+              </label>
+              <label class="opt-card selected" id="opt_q4_2_no">
+                <input type="radio" name="q4_2_significant" value="no" checked>
+                <span class="opt-text">ไม่ใช่ (No) ➔ สรุปความเสี่ยงต่ำมาก</span>
+              </label>
+            </div>
+
+            <!-- Dynamic notice for Very Low -->
+            <div class="flow-skip-banner" id="banner_q4_2_verylow" style="margin-top: 14px;">
+              <span>🟢 <strong>ตาม Flow ของ WHO IRA:</strong> หากไม่มีการสัมผัสแล้ว และไม่มีผู้ได้รับผลกระทบจำนวนมาก
+                ผลการประเมินจะสรุปเป็น <strong>"ความเสี่ยงต่ำมาก (Very Low Risk)"</strong> ทันที
+                สามารถยุติการติดตามได้</span>
+            </div>
+
+            <div class="notes-container">
+              <label class="notes-label" for="note_q4_2_general">📝 ข้อมูล/เหตุผลประกอบข้อ 4.2:</label>
+              <textarea id="note_q4_2_general" class="domain-notes-textarea"
+                placeholder="ระบุจำนวนผู้ได้รับผลกระทบสะสม หรือขอบเขตความเสียหาย..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 5.2: System Overwhelmed ================= -->
+        <div class="dynamic-question-card" id="card_q5_2">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 5.2 จากเกณฑ์ WHO IRA (กรณีความรุนแรงสูง + ระบาดสูง)</span>
+            <h2>5.2 ภาระต่อระบบบริการสุขภาพ (Healthcare System Overwhelmed)</h2>
+            <p class="step-subtitle">ประเมินความเสี่ยงที่ระบบบริการสุขภาพจะล่ม หรือเกินกำลังที่จะรองรับได้</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>ระบบบริการสุขภาพมีแนวโน้มที่จะถูกทำให้ล่ม (Overwhelmed) จากผู้ป่วยวิกฤตพุ่งสูงหรือไม่?</span>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card selected" id="opt_q5_2_yes">
+                <input type="radio" name="q5_2_overwhelmed" value="yes" checked>
+                <span class="opt-text">ใช่ มีแนวโน้มจะล่ม (Yes)</span>
+              </label>
+              <label class="opt-card" id="opt_q5_2_no">
+                <input type="radio" name="q5_2_overwhelmed" value="no">
+                <span class="opt-text">ไม่ใช่ ยังสามารถรองรับได้ (No)</span>
+              </label>
+            </div>
+
+            <div class="criteria-list" style="margin-top: 12px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">ปัจจัยพิจารณา (ตามสไลด์หน้า
+                40):</div>
+              <div class="criteria-item">
+                <span>จำนวนเตียงผู้ป่วยใน/ICU, บุคลากรที่ผ่านการอบรม, ความพร้อมของเครื่องช่วยหายใจ ยา และเวชภัณฑ์</span>
+              </div>
+            </div>
+
+            <div class="notes-container">
+              <label class="notes-label" for="note_q5_2_general">📝 ข้อมูล/เหตุผลประกอบข้อ 5.2
+                (การล่มของระบบสุขภาพ):</label>
+              <textarea id="note_q5_2_general" class="domain-notes-textarea"
+                placeholder="ระบุอัตราครองเตียง ICU, จำนวนห้องแยกความดันลบ, หรือข้อจำกัดด้านบุคลากร..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= QUESTION 5.1: Capacity Assessment ================= -->
+        <div class="dynamic-question-card" id="card_q5_1">
+          <div class="step-title-area">
+            <span class="step-badge-tag">ข้อ 5.1 จากเกณฑ์ WHO IRA</span>
+            <h2>5.1 ศักยภาพด้านการแพทย์และการตอบสนอง (Capacity Assessment)</h2>
+            <p class="step-subtitle">ประเมินความพร้อมในการควบคุมโรค ระบบรักษาพยาบาล และการมีส่วนร่วมของชุมชน</p>
+          </div>
+
+          <div class="question-block">
+            <div class="q-label">
+              <span>ขณะนี้ในพื้นที่มีศักยภาพและมาตรการเพื่อควบคุมสถานการณ์เพียงพอหรือไม่?</span>
+              <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q5_1', this)">
+                <span class="btn-subdrawer-icon">📋</span>
+                <span class="drawer-btn-label" data-expand-text="บันทึกข้อย่อย (A, B, C, D)"
+                  data-collapse-text="ย่อเก็บข้อย่อย (A, B, C, D)">บันทึกข้อย่อย (A, B, C, D)</span>
+                <span class="drawer-chevron">▼</span>
+              </button>
+            </div>
+
+            <div class="option-group">
+              <label class="opt-card" id="opt_q5_yes">
+                <input type="radio" name="q5_1_capacity" value="yes">
+                <span class="opt-text">มีศักยภาพเพียงพอ (Yes)</span>
+              </label>
+              <label class="opt-card selected" id="opt_q5_no">
+                <input type="radio" name="q5_1_capacity" value="no" checked>
+                <span class="opt-text">ไม่เพียงพอ / ไม่แน่ชัด (No/Unk)</span>
+              </label>
+            </div>
+
+            <!-- Sub-criteria A, B, C, D Drawer -->
+            <div id="drawer_q5_1" class="sub-criteria-drawer" style="display: none;">
+              <div class="drawer-header-info">
+                <span>เกณฑ์ตอบ "มีศักยภาพเพียงพอ": ต้องครบ A, B, C และ D ต้องตอบว่า "ไม่ใช่ (ไม่มีอุปสรรค)" (หน้า
+                  39):</span>
+                <span class="calc-auto-badge">⚡ คำนวณข้อย่อย ➔ ข้อหลักให้อัตโนมัติ</span>
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>A.</strong>
+                    มีมาตรการด้านสาธารณสุขที่มีประสิทธิผลพร้อมดำเนินการเพื่อควบคุมโรค</span>
+                  <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_a">
+                    <label class="sub-choice-label" id="lbl_sub_d5_a_yes"><input type="radio" name="sub_d5_a"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d5_a_no"><input type="radio" name="sub_d5_a"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d5_a" class="sub-criterion-input"
+                  placeholder="ทดบันทึก A เช่น มีแนวทางคัดกรองด่าน, การกักกัน 14 วัน...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>B.</strong> ระบบรักษาพยาบาล เตียง ยา บุคลากรเพียงพอ
+                    และประชาชนเข้าถึงได้</span>
+                  <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_b">
+                    <label class="sub-choice-label" id="lbl_sub_d5_b_yes"><input type="radio" name="sub_d5_b"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d5_b_no"><input type="radio" name="sub_d5_b"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d5_b" class="sub-criterion-input"
+                  placeholder="ทดบันทึก B เช่น มีห้องแยกความดันลบพร้อม, เวชภัณฑ์สำรอง...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>C.</strong> ประชาชนตระหนักถึงความเสี่ยง
+                    มีการสื่อสารความเสี่ยงและมีส่วนร่วมอย่างมีประสิทธิภาพ</span>
+                  <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_c">
+                    <label class="sub-choice-label" id="lbl_sub_d5_c_yes"><input type="radio" name="sub_d5_c"
+                        value="yes"> ใช่ (Yes)</label>
+                    <label class="sub-choice-label active-no" id="lbl_sub_d5_c_no"><input type="radio" name="sub_d5_c"
+                        value="no" checked> ไม่ใช่ (No)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d5_c" class="sub-criterion-input"
+                  placeholder="ทดบันทึก C เช่น ประชาชนสวมหน้ากาก, สื่อสารความเสี่ยงไม่ให้ตระหนก...">
+              </div>
+
+              <div class="sub-criterion-item">
+                <div class="sub-criterion-top">
+                  <span class="sub-criterion-title"><strong>D (อุปสรรคสำคัญ):</strong> มีความเปราะบาง/อุปสรรควิกฤต เช่น
+                    ขาดแคลนทรัพยากร, การตีตรา, หรือความไม่สงบ</span>
+                  <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_d">
+                    <label class="sub-choice-label active-yes" id="lbl_sub_d5_d_yes"><input type="radio" name="sub_d5_d"
+                        value="yes" checked> ใช่ (มีอุปสรรค)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_d_no"><input type="radio" name="sub_d5_d" value="no">
+                      ไม่ใช่ (ไม่มี)</label>
+                  </div>
+                </div>
+                <input type="text" id="note_d5_d" class="sub-criterion-input"
+                  placeholder="ทดบันทึก D เช่น ห้องแยกกักและบุคลากรที่ด่านตรวจคนเข้าเมืองอาจไม่เพียงพอ...">
+              </div>
+            </div>
+
+            <!-- Main Question Note Box -->
+            <div class="notes-container">
+              <label class="notes-label" for="note_q5_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 5.1
+                (ศักยภาพระบบ):</label>
+              <textarea id="note_q5_general" class="domain-notes-textarea"
+                placeholder="ระบุการสนับสนุนที่พื้นที่ต้องการเพิ่มเติม, ความพร้อมของเวชภัณฑ์..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Audit History Table Card with Direct Google Sheets Sync -->
+      <div class="glass-card audit-trail-card" style="margin-top: 24px;">
+        <div class="card-title-row audit-header-row">
+          <div class="audit-title-group">
+            <h3>🕒 ประวัติการประเมิน (Audit Trail)</h3>
+            <span class="sheet-status-badge status-disconnected" id="auditSheetStatusBadge">
+              <span class="status-dot"></span>
+              <span id="auditSheetStatusText">Google Sheet: ยังไม่ได้เชื่อมต่อ</span>
+            </span>
+          </div>
+          <div class="audit-header-actions">
+            <button id="btnConnectSheetFromAudit" class="btn btn-primary btn-sm">🔗 เชื่อมต่อชีต</button>
+            <button id="btnPullSheetEvents" class="btn btn-outline btn-sm"
+              title="ดึงข้อมูลประวัติและรหัสล่าสุดจาก Google Sheet มาอัปเดตที่เครื่องนี้">📥 ดึงจาก Sheet</button>
+            <button id="btnExportCsv" class="btn btn-secondary btn-sm">📄 ส่งออก CSV</button>
+          </div>
+        </div>
+
+        <!-- Quick Google Sheets status/connect banner -->
+        <div class="sheet-connect-banner" id="sheetConnectBanner">
+          <div class="sheet-banner-content">
+            <span style="font-size: 1.2rem;">📊</span>
+            <div>
+              <strong>ยังไม่ได้เชื่อมต่อ Google Sheet สำหรับจัดเก็บประวัติ:</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">บันทึกประวัติการประเมินออนไลน์อัตโนมัติ
+                เพื่อการตรวจสอบย้อนกลับ (Audit Trail) ตามมาตรฐาน WHO IRA</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnQuickConnectSheet" class="btn btn-sm btn-primary">ใส่ Web App URL เชื่อมต่อ</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th class="th-id">รหัสประเมิน (ID)</th>
+                <th class="th-time">วันที่</th>
+                <th class="th-event">เหตุการณ์ / พื้นที่</th>
+                <th class="th-risk">ผลประเมิน</th>
+                <th class="th-user">ผู้ประเมิน</th>
+                <th class="th-sheet">สถานะชีต</th>
+                <th class="th-actions">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Site Footer Note -->
+      <footer class="site-footer">
+        <div class="site-footer-container">
+          <div class="site-footer-badge">
+            <span class="site-footer-icon">🏢</span>
+            <span>พัฒนาโดย : <strong>กลุ่มระบาดวิทยาและตอบโต้ภาวะฉุกเฉินทางสาธารณสุข สำนักงานป้องกันควบคุมโรคที่ 1
+                เชียงใหม่</strong></span>
+          </div>
+          <div class="site-footer-sub">
+            <span>เครื่องมือสนับสนุนการประเมินความเสี่ยงเบื้องต้นเหตุการณ์เฉียบพลันตามแนวทางองค์การอนามัยโลก (WHO Acute
+              Event Initial Risk Assessment)</span>
+          </div>
+        </div>
+      </footer>
+
+    </section>
+
+    <!-- Right Column: Results & AI & Google Sheets -->
+    <aside class="sidebar-sticky" id="sidebarCol">
+
+      <!-- Live Risk Assessment Result Card -->
+      <div class="glass-card risk-result-card risk-moderate" id="riskResultCard">
+        <div class="risk-header-title">ผลการประเมินความเสี่ยงเบื้องต้น (Initial Risk Level)</div>
+
+        <div class="risk-badge-box risk-moderate" id="riskBadgeBox">
+          <span class="risk-badge-level" id="riskLevelText">ระดับความเสี่ยง: ปานกลาง</span>
+          <span class="risk-badge-level-en" id="riskLevelEn">MODERATE RISK</span>
+        </div>
+
+        <!-- Explicit Clear Written Conclusion & Rationale Box -->
+        <div class="risk-verdict-summary risk-moderate" id="riskVerdictSummary">
+          <div class="verdict-header">
+            <span class="verdict-icon">📋</span>
+            <strong>สรุปผลการประเมินและความหมาย:</strong>
+          </div>
+          <div class="verdict-desc" id="riskVerdictDesc">
+            กำลังประมวลผลการประเมินความเสี่ยง...
+          </div>
+          <div class="verdict-drivers" id="riskVerdictDrivers">
+            <!-- Populated dynamically with WHO IRA criteria drivers -->
+          </div>
+        </div>
+
+        <!-- 5 Domains Status Breakdown -->
+        <div class="domain-pills">
+          <div class="domain-pill-item">
+            <span>1. ภัยคุกคามสูง:</span>
+            <span class="domain-pill-status" id="pill-d1">-</span>
+          </div>
+          <div class="domain-pill-item">
+            <span>2. การสัมผัส:</span>
+            <span class="domain-pill-status" id="pill-d2">-</span>
+          </div>
+          <div class="domain-pill-item">
+            <span>3. ความรุนแรง:</span>
+            <span class="domain-pill-status" id="pill-d3">-</span>
+          </div>
+          <div class="domain-pill-item">
+            <span>4. การแพร่กระจาย:</span>
+            <span class="domain-pill-status" id="pill-d4">-</span>
+          </div>
+          <div class="domain-pill-item">
+            <span>5. ศักยภาพระบบ:</span>
+            <span class="domain-pill-status" id="pill-d5">-</span>
+          </div>
+        </div>
+
+        <!-- Suggested Actions List -->
+        <div class="actions-block">
+          <h4>📌 มาตรการตอบสนองที่แนะนำ (Suggested Actions):</h4>
+          <ul class="actions-list" id="suggestedActionsList">
+            <!-- Populated dynamically -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Typhoon AI Narrative Summary Card -->
+      <div class="glass-card ai-narrative-card">
+        <div class="card-title-row">
+          <h3>🌪️ Typhoon AI สรุปรายงาน</h3>
+          <div style="display: flex; gap: 6px;">
+            <button id="btnCopyAi" class="btn btn-outline btn-sm" title="คัดลอกข้อความ">📋 คัดลอก</button>
+          </div>
+        </div>
+
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+          สร้างบทบรรยายสถานการณ์และข้อเสนอแนะเชิงระบาดวิทยาอัตโนมัติด้วยภาษาไทยที่เป็นทางการ
+        </p>
+
+        <div class="ai-loading-spinner" id="aiSpinner">
+          <div class="spinner"></div>
+          <span>Typhoon AI กำลังวิเคราะห์และเรียบเรียงรายงาน...</span>
+        </div>
+
+        <div class="ai-output-box" id="aiNarrativeBox" contenteditable="true" spellcheck="false">
+          กดปุ่ม "สร้างรายงานสรุปด้วย Typhoon AI" ด้านล่าง
+          เพื่อสร้างบทบรรยายสรุปสถานการณ์และข้อเสนอแนะทางการแพทย์ตามหลักระบาดวิทยา
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 8px;">
+          <button id="btnGenerateAi" class="btn btn-primary" style="flex: 1;">
+            ✨ สร้างรายงานสรุปด้วย Typhoon AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Google Sheets Audit Trail Card -->
+      <div class="glass-card" style="padding: 20px;">
+        <div class="card-title-row">
+          <h3>📊 บันทึกข้อมูล Google Sheets</h3>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+          บันทึกประวัติการตัดสินใจ พร้อมคำตอบ 5 Domains และผลประเมิน เพื่อความโปร่งใสและตรวจสอบย้อนหลังได้ (Audit Trail)
+        </p>
+        <button id="btnSaveSheet" class="btn btn-secondary btn-lg"
+          style="width: 100%; border-color: rgba(56, 189, 248, 0.4);">
+          💾 บันทึกลง Google Sheet
+        </button>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Settings Modal Popup -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⚙️ ตั้งค่าการเชื่อมต่อ (Integration Settings)</h3>
+        <button class="modal-close-btn" id="btnCloseSettings">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="form-group">
+          <label for="settingTyphoonApiKey">Typhoon AI API Key</label>
+          <input type="password" id="settingTyphoonApiKey" class="form-control" placeholder="typhoon-xxxxxxxxxxxxxxxx">
+          <small style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
+              target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่าง
+            ระบบจะใช้โหมดจำลอง)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="settingTyphoonModel">โมเดล Typhoon (Model Name)</label>
+          <select id="settingTyphoonModel" class="form-control">
+            <option value="typhoon-v2.5-30b-a3b-instruct" selected>typhoon-v2.5-30b-a3b-instruct (แนะนำ - Flagship
+              ล่าสุด)</option>
+            <option value="typhoon-v2.1-12b-instruct">typhoon-v2.1-12b-instruct (ประมวลผลเร็ว / 56k)</option>
+            <option value="typhoon-v1.5-instruct">typhoon-v1.5-instruct (เวอร์ชันมาตรฐานเดิม)</option>
+            <option value="custom">-- ระบุชื่อโมเดลเอง (Custom Model) --</option>
+          </select>
+          <input type="text" id="settingTyphoonModelCustom" class="form-control"
+            placeholder="พิมพ์ชื่อโมเดลอื่น ๆ เช่น typhoon-v2.5-..." style="display: none; margin-top: 6px;">
+          <small style="color: #475569; font-size: 0.75rem;">โมเดลที่แนะนำสำหรับ OpenTyphoon ปัจจุบันคือซีรีส์
+            2.5/2.1</small>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color);">
+
+        <div class="form-group">
+          <label for="settingGoogleSheetsUrl">Google Apps Script Web App URL</label>
+          <input type="url" id="settingGoogleSheetsUrl" class="form-control"
+            placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+          <small style="color: #475569; font-size: 0.78rem;">URL ของ Web App ที่ได้จากการ Deploy Google Apps Script
+            (ดูโค้ดและวิธีติดตั้งในไฟล์ google_apps_script.js)</small>
+        </div>
+
+        <div class="security-note-box">
+          <span style="font-size: 1.15rem; flex-shrink: 0;">🛡️</span>
+          <div>
+            <strong style="color: #0369a1; font-weight: 700;">ความปลอดภัยของข้อมูล:</strong> ข้อมูล API Key และ Sheet
+            URL จะถูกบันทึกไว้ใน Browser LocalStorage ของอุปกรณ์เครื่องนี้เท่านั้น
+            ไม่มีการส่งไปเก็บไว้ที่เซิร์ฟเวอร์ภายนอกอื่นใด
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button id="btnSaveSettings" class="btn btn-primary">บันทึกการตั้งค่า</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Authentication Modal Popup -->
+  <div class="modal-overlay" id="deleteAuthModal">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header" style="background: #fff1f2; border-bottom: 1px solid rgba(225, 29, 72, 0.2);">
+        <h3 style="color: #be123c; display: flex; align-items: center; gap: 8px;">
+          <span>🔒</span> ยืนยันสิทธิ์เพื่อลบเหตุการณ์
+        </h3>
+        <button class="modal-close-btn" id="btnCloseDeleteModal">&times;</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Target Event Summary Box -->
+        <div
+          style="background: #fff5f7; border: 1px solid rgba(225, 29, 72, 0.2); padding: 12px 14px; border-radius: var(--radius-sm);">
+          <div style="font-size: 0.8rem; color: #881337; font-weight: 700;">เหตุการณ์ที่ต้องการลบ:</div>
+          <div style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-top: 2px;" id="delModalEventName">
+            กำลังโหลด...</div>
+          <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">
+            รหัส: <strong id="delModalEventId">IRA-xxxxxx</strong> | วันที่: <span id="delModalDate">-</span>
+          </div>
+        </div>
+
+        <p style="font-size: 0.82rem; color: #475569; line-height: 1.5; margin-top: 2px;">
+          ⚠️ <strong>คำเตือน:</strong> การลบนี้จะนำข้อมูลออกจากตารางประวัติ และลบแถวออกจาก Google Sheet
+          (หากเชื่อมต่ออยู่) กรุณากรอกรหัสผ่านเพื่อดำเนินการ
+        </p>
+
+        <div class="form-group" style="margin-top: 4px;">
+          <label for="deleteUsername">ชื่อผู้ใช้งาน (Username) *</label>
+          <input type="text" id="deleteUsername" class="form-control" placeholder="เช่น admin" autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="deletePassword">รหัสผ่าน (Password) *</label>
+          <input type="password" id="deletePassword" class="form-control" placeholder="รหัสผ่านผู้ดูแล"
+            autocomplete="current-password">
+        </div>
+
+        <div class="security-note-box" style="margin-top: 2px; padding: 10px 12px; font-size: 0.78rem;">
+          <span style="font-size: 1rem; flex-shrink: 0;">ℹ️</span>
+          <div>
+            <strong>สิทธิ์เริ่มต้น:</strong> user: <code>admin</code> / pass: <code>admin</code><br>
+            (สามารถเปลี่ยนหรือเพิ่มผู้ใช้งานที่อนุญาตได้ในแท็บ <strong>"Auth_Users"</strong> บน Google Sheet)
+          </div>
+        </div>
+
+        <div id="deleteAuthError"
+          style="display: none; background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;">
+        </div>
+
+      </div>
+      <div class="modal-footer" style="background: #fff5f7;">
+        <button id="btnCancelDelete" class="btn btn-outline">ยกเลิก</button>
+        <button id="btnConfirmDelete" class="btn btn-danger"
+          style="background: #dc2626; border-color: #dc2626; color: #ffffff;">🗑️ ยืนยันการลบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js?v=3.4"></script>
+</body>
+
+</html>
