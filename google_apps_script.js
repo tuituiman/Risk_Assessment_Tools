@@ -193,7 +193,7 @@ function getNextAssessmentIdFromSheet(sheet, year) {
     }
   }
   var nextSeq = maxSeq + 1;
-  var padSeq = ("000" + nextSeq).slice(-3);
+  var padSeq = nextSeq < 1000 ? ("000" + nextSeq).slice(-3) : String(nextSeq);
   return "IRA-" + padSeq + "-" + ceYear;
 }
 
@@ -435,7 +435,7 @@ function doGet(e) {
           var rowEvent = r[2] ? String(r[2]).trim() : (r[1] ? String(r[1]).trim() : "");
           if (rowId || rowEvent) {
             records.push({
-              id: rowId || ("IRA-" + ("000" + (i + 1)).slice(-3) + "-" + new Date().getFullYear()),
+              id: rowId || ("IRA-" + (i + 1 < 1000 ? ("000" + (i + 1)).slice(-3) : String(i + 1)) + "-" + new Date().getFullYear()),
               timestamp: r[1] ? String(r[1]) : "",
               eventName: r[2] ? String(r[2]) : (rowEvent || "เหตุการณ์ประเมิน"),
               location: r[3] ? String(r[3]) : "",

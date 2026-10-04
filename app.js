@@ -1022,6 +1022,8 @@ ${userNotesCompiled}`;
         modelToUse = 'typhoon-v2.5-30b-a3b-instruct';
       }
 
+      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined;
+
       // Real API Call to Typhoon AI
       let response = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
         method: 'POST',
@@ -1037,7 +1039,8 @@ ${userNotesCompiled}`;
           ],
           temperature: 0.2,
           max_tokens: 1400
-        })
+        }),
+        signal: fetchSignal
       });
 
       if (!response.ok) {
@@ -1056,6 +1059,7 @@ ${userNotesCompiled}`;
         // If 400 occurred with a non-default model, try auto-retrying once with flagship model
         if (response.status === 400 && modelToUse !== 'typhoon-v2.5-30b-a3b-instruct') {
           console.warn(`400 error with model ${modelToUse}. Retrying with typhoon-v2.5-30b-a3b-instruct...`);
+          const retrySignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined;
           response = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -1070,7 +1074,8 @@ ${userNotesCompiled}`;
               ],
               temperature: 0.2,
               max_tokens: 1400
-            })
+            }),
+            signal: retrySignal
           });
 
           if (!response.ok) {
@@ -2013,17 +2018,17 @@ function exportHistoryCSV() {
 
   const headers = ['ID', 'Timestamp', 'Event_Name', 'Location', 'Assessor', 'Risk_Level_TH', 'Risk_Level_EN', 'Actions', 'Sheet_Synced', 'User_Notes', 'AI_Summary'];
   const rows = state.auditHistory.map(r => [
-    `"${r.id}"`,
-    `"${r.timestamp}"`,
-    `"${r.eventName}"`,
-    `"${r.location}"`,
-    `"${r.assessorName}"`,
-    `"${r.riskLevel}"`,
-    `"${r.riskLevelEn}"`,
-    `"${r.actions.replace(/"/g, '""')}"`,
+    `"${(r.id || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.timestamp || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.eventName || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.location || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.assessorName || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.riskLevel || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.riskLevelEn || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.actions || '').toString().replace(/"/g, '""')}"`,
     `"${r.syncedToSheet ? 'Yes' : 'No'}"`,
-    `"${(r.userNotes || '').replace(/"/g, '""')}"`,
-    `"${(r.aiSummary || '').replace(/"/g, '""')}"`
+    `"${(r.userNotes || '').toString().replace(/"/g, '""')}"`,
+    `"${(r.aiSummary || '').toString().replace(/"/g, '""')}"`
   ]);
 
   const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
