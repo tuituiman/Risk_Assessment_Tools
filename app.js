@@ -1113,14 +1113,33 @@ ${userNotesCompiled}`;
  * Send a single record payload to Google Sheets Web App endpoint
  */
 async function sendRecordToSheetWebhook(record, url) {
-  return fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify(record)
-  });
+  // ใช้ CORS ปกติ (text/plain = simple request ไม่มี preflight) เพื่ออ่านผลตอบกลับจากชีตได้จริง
+  // ห้าม fallback ไปส่งซ้ำแบบ no-cors เพราะคำขอแรกอาจถูกบันทึกไปแล้ว -> จะเกิดแถวซ้ำ
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(record),
+      redirect: 'follow'
+    });
+  } catch (netErr) {
+    // อาจเป็นเน็ตหลุด หรือเบราว์เซอร์บล็อกการอ่านผล (ชีตอาจบันทึกไปแล้ว) -> ถือว่า "ยืนยันไม่ได้"
+    console.warn('Sheet POST could not be confirmed:', netErr);
+    return { confirmed: false, data: null };
+  }
+
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (parseErr) {
+    throw new Error('ชีตตอบกลับไม่ใช่ JSON (ตรวจสอบว่า Deploy Web App เป็น "ทุกคน (Anyone)" และใช้ URL /exec ล่าสุด)');
+  }
+  if (!data || data.status !== 'success') {
+    throw new Error((data && data.message) || 'Google Sheet แจ้งข้อผิดพลาด');
+  }
+  return { confirmed: true, data: data };
 }
 
 /**
@@ -1169,7 +1188,10 @@ async function saveToGoogleSheets() {
   const answersSnapshot = JSON.parse(JSON.stringify(state.answers));
   const subAnswersSnapshot = JSON.parse(JSON.stringify(state.subAnswers));
   const notesSnapshot = Object.assign({}, state.notes);
+  // รหัสเฉพาะของการกดบันทึกครั้งนี้ ใช้ค้นหาแถวของเราในชีตกรณีอ่านผลตอบกลับไม่ได้
+  const clientSaveId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   const rawPayload = JSON.stringify({
+    clientSaveId: clientSaveId,
     assessmentDate: state.metadata.assessmentDate,
     clinicalDetails: state.metadata.clinicalDetails,
     answers: answersSnapshot,
@@ -1203,6 +1225,7 @@ async function saveToGoogleSheets() {
     record.subAnswers = subAnswersSnapshot;
     record.notes = notesSnapshot;
     record.rawPayload = rawPayload;
+    record.clientSaveId = clientSaveId;
     record.isOverwrite = true;
     record.intendedAction = 'overwrite';
     record.syncedToSheet = false;
@@ -1230,6 +1253,7 @@ async function saveToGoogleSheets() {
       subAnswers: subAnswersSnapshot,
       notes: notesSnapshot,
       rawPayload: rawPayload,
+      clientSaveId: clientSaveId,
       isOverwrite: false,
       intendedAction: 'create',
       syncedToSheet: false
@@ -1238,7 +1262,7 @@ async function saveToGoogleSheets() {
   }
 
   // Save to local storage
-  localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 50)));
+  localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
 
   if (!sheetsUrl) {
     renderAuditTable();
@@ -1256,19 +1280,42 @@ async function saveToGoogleSheets() {
   }
 
   try {
-    await sendRecordToSheetWebhook(record, sheetsUrl);
-    record.syncedToSheet = true;
-    localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
-    if (isExistingEvent) {
-      showToast(`บันทึกทับข้อมูลเรื่องเดิม (${targetId}) ลง Google Sheets เรียบร้อยแล้ว (ไม่เปิด ID ซ้ำ)`, 'success');
+    const result = await sendRecordToSheetWebhook(record, sheetsUrl);
+
+    if (result.confirmed) {
+      // ยึดรหัสที่ชีตใช้จริงเสมอ (ชีตอาจออกรหัสใหม่ให้ถ้า ID ชนกับเครื่องอื่น)
+      const sheetId = result.data && result.data.id ? String(result.data.id).trim() : '';
+      if (sheetId && sheetId !== record.id) {
+        const oldId = record.id;
+        record.id = sheetId;
+        setActiveAssessmentId(sheetId);
+        showToast(`รหัส ${oldId} ถูกเครื่องอื่นใช้ไปแล้ว ระบบออกรหัสใหม่ให้เป็น ${sheetId}`, 'warn');
+      }
+      record.syncedToSheet = true;
+      localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
+      if (isExistingEvent) {
+        showToast(`บันทึกทับข้อมูลเรื่องเดิม (${record.id}) ลง Google Sheets เรียบร้อยแล้ว`, 'success');
+      } else {
+        showToast(`บันทึกข้อมูลเหตุการณ์ใหม่ (${record.id}) ลง Google Sheets เรียบร้อยแล้ว!`, 'success');
+      }
+      await fetchEventsFromGoogleSheet(true);
     } else {
-      showToast(`บันทึกข้อมูลเหตุการณ์ใหม่ (${targetId}) ลง Google Sheets เรียบร้อยแล้ว!`, 'success');
+      // อ่านผลไม่ได้ -> ดึงชีตมาตรวจ แล้วหาแถวของเราด้วย clientSaveId
+      showToast('ส่งข้อมูลแล้วแต่ยังยืนยันผลไม่ได้ กำลังตรวจสอบกับ Google Sheet...', 'warn');
+      await fetchEventsFromGoogleSheet(true);
+      const mine = state.auditHistory.find(r => r.clientSaveId === clientSaveId);
+      if (mine) {
+        setActiveAssessmentId(mine.id);
+        showToast(`ยืนยันแล้ว: บันทึกเป็น ${mine.id} ใน Google Sheet`, 'success');
+      } else {
+        // ไม่พบในชีต -> ปลดรหัสออก เพื่อไม่ให้การบันทึกครั้งหน้าไปทับเคสของคนอื่น
+        if (!isExistingEvent) setActiveAssessmentId(null);
+        showToast('ไม่พบข้อมูลนี้ใน Google Sheet กรุณากดบันทึกอีกครั้ง', 'error');
+      }
     }
-    // ดึงข้อมูลล่าสุดจากชีตทันทีเพื่อแสดงผลแบบ real-time
-    await fetchEventsFromGoogleSheet(true);
   } catch (err) {
     console.error('Google Sheets Sync Error:', err);
-    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sheets แต่บันทึกไว้ในประวัติเครื่องแล้ว', 'error');
+    showToast(`บันทึกลง Google Sheets ไม่สำเร็จ: ${err.message} (ข้อมูลยังอยู่ในเครื่อง)`, 'error');
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -1293,6 +1340,13 @@ async function syncAllAuditToGoogleSheets() {
     return;
   }
 
+  // ส่งเฉพาะรายการที่ยังไม่ซิงก์ (ถ้าส่งเคสใหม่ที่ซิงก์แล้วซ้ำ ชีตจะสร้างแถวซ้ำเพิ่ม)
+  const pending = state.auditHistory.filter(r => !r.syncedToSheet);
+  if (pending.length === 0) {
+    showToast('ทุกรายการซิงก์กับ Google Sheet แล้ว', 'info');
+    return;
+  }
+
   const btn = document.getElementById('btnSyncAllToSheet');
   if (btn) {
     btn.disabled = true;
@@ -1300,12 +1354,19 @@ async function syncAllAuditToGoogleSheets() {
   }
 
   let successCount = 0;
-  for (const rec of state.auditHistory) {
+  let failCount = 0;
+  for (const rec of pending) {
     try {
-      await sendRecordToSheetWebhook(rec, sheetsUrl);
-      rec.syncedToSheet = true;
-      successCount++;
+      const result = await sendRecordToSheetWebhook(rec, sheetsUrl);
+      if (result.confirmed) {
+        if (result.data && result.data.id) rec.id = String(result.data.id).trim();
+        rec.syncedToSheet = true;
+        successCount++;
+      } else {
+        failCount++;
+      }
     } catch (e) {
+      failCount++;
       console.warn('Failed syncing record:', rec.id, e);
     }
   }
@@ -1318,12 +1379,11 @@ async function syncAllAuditToGoogleSheets() {
     btn.innerHTML = '🔄 ซิงก์ขึ้น Sheet';
   }
 
-  showToast(`ส่งข้อมูลขึ้น Google Sheet สำเร็จ ${successCount} รายการ! กำลังตรวจสอบสถานะชีต...`, 'success');
+  showToast(`ซิงก์สำเร็จ ${successCount} รายการ${failCount ? ` / ยืนยันไม่ได้ ${failCount} รายการ` : ''} กำลังตรวจสอบสถานะชีต...`, failCount ? 'warn' : 'success');
   // Re-fetch to confirm authoritative state from Google Sheet
   await fetchEventsFromGoogleSheet(true);
 }
 
-/**
 /**
  * Pull all assessment history from Google Sheet into local client state
  * Ensures multiple computers working together always have identical history and next Assessment ID
@@ -1371,7 +1431,11 @@ async function fetchEventsFromGoogleSheet(isSilent = false) {
       const localMap = new Map((state.auditHistory || []).map(item => [String(item.id || '').trim(), item]));
       state.auditHistory = data.events.map(r => {
         const rowId = String(r.id || '').trim();
-        const local = localMap.get(rowId);
+        const candidate = localMap.get(rowId);
+        // ผสานข้อมูลในเครื่องเฉพาะเมื่อเป็นเคสเดียวกันจริง (ชื่อเหตุการณ์ตรงกัน) ป้องกันข้อมูลปนกับเคสคนอื่นที่ ID ซ้ำ
+        const sameCase = candidate &&
+          String(candidate.eventName || '').trim().toLowerCase() === String(r.eventName || '').trim().toLowerCase();
+        const local = sameCase ? candidate : null;
         let parsedPayload = null;
         if (r.rawPayload) {
           try {
@@ -1455,11 +1519,17 @@ window.syncSingleAuditRow = async function (id) {
 
   try {
     showToast(`กำลังส่ง #${id} ไปยัง Google Sheet...`, 'info');
-    await sendRecordToSheetWebhook(rec, sheetsUrl);
-    rec.syncedToSheet = true;
-    localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
-    renderAuditTable();
-    showToast(`บันทึก #${id} ลง Google Sheet สำเร็จแล้ว!`, 'success');
+    const result = await sendRecordToSheetWebhook(rec, sheetsUrl);
+    if (result.confirmed) {
+      if (result.data && result.data.id) rec.id = String(result.data.id).trim();
+      rec.syncedToSheet = true;
+      if (state.currentAssessmentId === id) setActiveAssessmentId(rec.id);
+      localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
+      renderAuditTable();
+      showToast(`บันทึก #${rec.id} ลง Google Sheet สำเร็จแล้ว!`, 'success');
+    } else {
+      showToast(`ส่ง #${id} แล้วแต่ยืนยันผลไม่ได้ กำลังตรวจสอบกับชีต...`, 'warn');
+    }
     // ดึงข้อมูลล่าสุดจากชีตทันทีเพื่อแสดงผลแบบ real-time
     await fetchEventsFromGoogleSheet(true);
   } catch (err) {
@@ -1553,6 +1623,25 @@ function formatOnlyDate(raw) {
 }
 
 /**
+ * Escape text before inserting into HTML (ป้องกัน XSS จากข้อมูลในชีตที่ใช้ร่วมกัน)
+ */
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Build a safe JS string literal for use inside an HTML onclick="..." attribute
+ */
+function jsArgAttr(value) {
+  return escapeHtml(JSON.stringify(String(value == null ? '' : value)));
+}
+
+/**
  * Render Local Audit History Table with Google Sheet Sync Status
  */
 function renderAuditTable() {
@@ -1569,28 +1658,29 @@ function renderAuditTable() {
     if (rec.riskLevelEn === 'Very Low' || rec.riskLevelEn === 'Low') colorBadge = 'status-no';
     if (rec.riskLevelEn === 'High' || rec.riskLevelEn === 'Very High') colorBadge = 'status-yes';
 
+    const idArg = jsArgAttr(rec.id);
     const sheetStatusHtml = rec.syncedToSheet
       ? `<span class="badge-synced">✅ ซิงก์แล้ว</span>`
-      : `<span class="badge-pending">⏳ ยังไม่ซิงก์</span> <button class="btn btn-outline btn-sm btn-quick-sync" onclick="syncSingleAuditRow('${rec.id}')">💾 ซิงก์</button>`;
+      : `<span class="badge-pending">⏳ ยังไม่ซิงก์</span> <button class="btn btn-outline btn-sm btn-quick-sync" onclick="syncSingleAuditRow(${idArg})">💾 ซิงก์</button>`;
 
-    const locHtml = rec.location ? `<div class="audit-event-loc">📍 ${rec.location}</div>` : '';
-    const displayDate = formatOnlyDate(rec.timestamp || rec.assessmentDate);
+    const locHtml = rec.location ? `<div class="audit-event-loc">📍 ${escapeHtml(rec.location)}</div>` : '';
+    const displayDate = escapeHtml(formatOnlyDate(rec.timestamp || rec.assessmentDate));
 
     return `
       <tr>
-        <td class="col-audit-id"><span class="audit-id-badge">${rec.id}</span></td>
+        <td class="col-audit-id"><span class="audit-id-badge">${escapeHtml(rec.id)}</span></td>
         <td class="col-audit-time">${displayDate}</td>
         <td class="col-audit-event">
-          <div class="audit-event-name">${rec.eventName || '-'}</div>
+          <div class="audit-event-name">${escapeHtml(rec.eventName || '-')}</div>
           ${locHtml}
         </td>
-        <td class="col-audit-risk"><span class="audit-risk-badge ${colorBadge}">${rec.riskLevel}</span></td>
-        <td class="col-audit-user"><div class="audit-assessor">${rec.assessorName || '-'}</div></td>
+        <td class="col-audit-risk"><span class="audit-risk-badge ${colorBadge}">${escapeHtml(rec.riskLevel)}</span></td>
+        <td class="col-audit-user"><div class="audit-assessor">${escapeHtml(rec.assessorName || '-')}</div></td>
         <td class="col-audit-sheet">${sheetStatusHtml}</td>
         <td class="col-audit-actions">
           <div class="audit-btn-group">
-            <button class="btn btn-outline btn-sm" onclick="viewAuditDetail('${rec.id}')" title="ดูรายละเอียดหรือโหลดมาแก้ไข">👁️ ดู / แก้ไข</button>
-            <button class="btn btn-outline-danger btn-sm" onclick="promptDeleteEvent('${rec.id}')" title="ลบข้อมูลเหตุการณ์นี้ (ต้องยืนยันรหัสผ่าน)">🗑️ ลบ</button>
+            <button class="btn btn-outline btn-sm" onclick="viewAuditDetail(${idArg})" title="ดูรายละเอียดหรือโหลดมาแก้ไข">👁️ ดู / แก้ไข</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="promptDeleteEvent(${idArg})" title="ลบข้อมูลเหตุการณ์นี้ (ต้องยืนยันรหัสผ่าน)">🗑️ ลบ</button>
           </div>
         </td>
       </tr>
@@ -1847,23 +1937,33 @@ async function executeDeleteEvent() {
     } catch (err) {
       console.warn('GET delete failed, attempting POST fallback:', err);
       try {
-        await fetch(sheetsUrl, {
+        const postRes = await fetch(sheetsUrl, {
           method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'delete',
             id: item.id,
             eventName: item.eventName,
             username: username,
             password: password
-          })
+          }),
+          redirect: 'follow'
         });
+        const postText = await postRes.text();
+        let postJson;
+        try {
+          postJson = JSON.parse(postText);
+        } catch (e) {
+          throw new Error('ไม่สามารถอ่านการตอบกลับการลบข้อมูล (ตรวจสอบสิทธิ์บนชีต)');
+        }
+        if (postJson && postJson.status === 'error') {
+          throw new Error(postJson.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (ตรวจสอบในแท็บ Auth_Users บนชีต)');
+        }
 
-        finishLocalDeletion(item.id, `ส่งคำสั่งลบเหตุการณ์ #${item.id} ไปยัง Google Sheet เรียบร้อยแล้ว`);
+        finishLocalDeletion(item.id, `ลบข้อมูลเหตุการณ์ #${item.id} ใน Google Sheet และประวัติเรียบร้อยแล้ว`);
       } catch (err2) {
         if (errEl) {
-          errEl.textContent = `เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sheets: ${err2.message}`;
+          errEl.textContent = err2.message || `เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sheets`;
           errEl.style.display = 'block';
         }
         if (btnConfirm) {
@@ -1891,7 +1991,7 @@ async function executeDeleteEvent() {
 
 function finishLocalDeletion(deletedId, successMsg) {
   state.auditHistory = state.auditHistory.filter(x => x.id !== deletedId);
-  localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 50)));
+  localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
 
   if (state.currentAssessmentId === deletedId) {
     setActiveAssessmentId(null);
@@ -2056,7 +2156,9 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<span>${message}</span>`;
+  const span = document.createElement('span');
+  span.textContent = message;
+  toast.appendChild(span);
   container.appendChild(toast);
 
   setTimeout(() => {
