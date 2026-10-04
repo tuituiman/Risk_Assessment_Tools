@@ -73,7 +73,8 @@ function getMainAssessmentSheet(ss) {
       "Risk_Level_EN",
       "Recommended_Actions",
       "User_Notes",
-      "AI_Narrative_Summary"
+      "AI_Narrative_Summary",
+      "Raw_Payload"
     ];
     targetSheet.appendRow(headers);
 
@@ -331,7 +332,8 @@ function doPost(e) {
       data.riskLevelEn || "",
       data.actions || "",
       data.userNotes || "",
-      data.aiSummary || ""
+      data.aiSummary || "",
+      data.rawPayload || ""
     ];
 
     if (existingRowIndex > 1) {
@@ -413,7 +415,7 @@ function doGet(e) {
       var lastRow = sheet.getLastRow();
       var records = [];
       if (lastRow > 1) {
-        var numCols = Math.min(Math.max(sheet.getLastColumn(), 1), 15);
+        var numCols = Math.min(Math.max(sheet.getLastColumn(), 1), 16);
         var values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
         for (var i = 0; i < values.length; i++) {
           var r = values[i];
@@ -436,6 +438,7 @@ function doGet(e) {
               actions: r[12] ? String(r[12]) : "",
               userNotes: r[13] ? String(r[13]) : "",
               aiSummary: r[14] ? String(r[14]) : "",
+              rawPayload: r[15] ? String(r[15]) : "",
               syncedToSheet: true
             });
           }

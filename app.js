@@ -1132,6 +1132,22 @@ async function saveToGoogleSheets() {
   const sheetsUrl = state.settings.googleSheetsUrl.trim();
   const compiledNotes = compileUserNotes();
 
+  // Always synchronize state.metadata from current input fields to ensure zero missing data
+  state.metadata.eventName = (document.getElementById('eventName')?.value || state.metadata.eventName || '').trim();
+  state.metadata.location = (document.getElementById('location')?.value || state.metadata.location || '').trim();
+  state.metadata.assessmentDate = (document.getElementById('assessmentDate')?.value || state.metadata.assessmentDate || new Date().toISOString().split('T')[0]).trim();
+  state.metadata.assessorName = (document.getElementById('assessorName')?.value || state.metadata.assessorName || '').trim();
+  state.metadata.clinicalDetails = (document.getElementById('clinicalDetails')?.value || state.metadata.clinicalDetails || '').trim();
+
+  // Synchronize all domain notes & sub-criteria notes from inputs
+  const currentNotes = {};
+  document.querySelectorAll('.domain-notes-textarea, .sub-criterion-input').forEach(inp => {
+    if (inp.id && inp.value && inp.value.trim()) {
+      currentNotes[inp.id] = inp.value.trim();
+    }
+  });
+  state.notes = Object.assign({}, state.notes, currentNotes);
+
   const curEventName = (state.metadata.eventName || '').trim();
   const curLocation = (state.metadata.location || '').trim();
 
@@ -1161,6 +1177,17 @@ async function saveToGoogleSheets() {
   }
   setActiveAssessmentId(targetId);
 
+  const answersSnapshot = JSON.parse(JSON.stringify(state.answers));
+  const subAnswersSnapshot = JSON.parse(JSON.stringify(state.subAnswers));
+  const notesSnapshot = Object.assign({}, state.notes);
+  const rawPayload = JSON.stringify({
+    assessmentDate: state.metadata.assessmentDate,
+    clinicalDetails: state.metadata.clinicalDetails,
+    answers: answersSnapshot,
+    subAnswers: subAnswersSnapshot,
+    notes: notesSnapshot
+  });
+
   let record;
   if (isExistingEvent) {
     // Overwrite existing record in-place (save ทับ ไม่เปิด ID ใหม่)
@@ -1168,6 +1195,8 @@ async function saveToGoogleSheets() {
     record.timestamp = new Date().toLocaleString('th-TH') + ' (ปรับปรุง)';
     record.eventName = curEventName || 'เหตุการณ์ทั่วไป';
     record.location = curLocation || 'ไม่ระบุ';
+    record.assessmentDate = state.metadata.assessmentDate;
+    record.clinicalDetails = state.metadata.clinicalDetails;
     record.assessorName = state.metadata.assessorName || 'ผู้ประเมิน';
     record.d1_highThreat = state.answers.q1_highThreat || 'No';
     record.d2_exposure = state.answers.q2_exposureActive || 'No';
@@ -1179,6 +1208,10 @@ async function saveToGoogleSheets() {
     record.actions = state.assessmentResult.suggestedActions.join(' | ');
     record.userNotes = compiledNotes || 'ไม่มีบันทึกเพิ่มเติม';
     record.aiSummary = state.aiSummary || 'ยังไม่มีการสร้างบทสรุป AI';
+    record.answers = answersSnapshot;
+    record.subAnswers = subAnswersSnapshot;
+    record.notes = notesSnapshot;
+    record.rawPayload = rawPayload;
     record.syncedToSheet = false;
   } else {
     // Brand new event
@@ -1187,6 +1220,8 @@ async function saveToGoogleSheets() {
       timestamp: new Date().toLocaleString('th-TH'),
       eventName: curEventName || 'เหตุการณ์ทั่วไป',
       location: curLocation || 'ไม่ระบุ',
+      assessmentDate: state.metadata.assessmentDate,
+      clinicalDetails: state.metadata.clinicalDetails,
       assessorName: state.metadata.assessorName || 'ผู้ประเมิน',
       d1_highThreat: state.answers.q1_highThreat || 'No',
       d2_exposure: state.answers.q2_exposureActive || 'No',
@@ -1198,6 +1233,10 @@ async function saveToGoogleSheets() {
       actions: state.assessmentResult.suggestedActions.join(' | '),
       userNotes: compiledNotes || 'ไม่มีบันทึกเพิ่มเติม',
       aiSummary: state.aiSummary || 'ยังไม่มีการสร้างบทสรุป AI',
+      answers: answersSnapshot,
+      subAnswers: subAnswersSnapshot,
+      notes: notesSnapshot,
+      rawPayload: rawPayload,
       syncedToSheet: false
     };
     state.auditHistory.unshift(record);
@@ -1333,11 +1372,24 @@ async function fetchEventsFromGoogleSheet(isSilent = false) {
       const sheetTabName = data.sheetName ? ` [แท็บ: ${data.sheetName}]` : '';
 
       // เมื่อเชื่อมต่อ Google Sheet ให้ยึดข้อมูลในชีตเป็นหลัก (Single Source of Truth)
-      // หากในชีตเป็น 0 จะเคลียร์หน้าตารางประวัติออกให้ว่างตรงกัน
-      state.auditHistory = data.events.map(r => Object.assign({}, r, {
-        id: String(r.id || '').trim(),
-        syncedToSheet: true
-      }));
+      // ผสานรายละเอียดคำตอบและข้อมูลทางคลินิกที่มีในเครื่องเข้ากับข้อมูลที่ดึงมาจากชีต
+      const localMap = new Map((state.auditHistory || []).map(item => [String(item.id || '').trim(), item]));
+      state.auditHistory = data.events.map(r => {
+        const rowId = String(r.id || '').trim();
+        const local = localMap.get(rowId);
+        let parsedPayload = null;
+        if (r.rawPayload) {
+          try {
+            parsedPayload = typeof r.rawPayload === 'string' ? JSON.parse(r.rawPayload) : r.rawPayload;
+          } catch (e) {
+            console.warn('Error parsing rawPayload from sheet row:', rowId, e);
+          }
+        }
+        return Object.assign({}, local || {}, r, parsedPayload || {}, {
+          id: rowId,
+          syncedToSheet: true
+        });
+      });
 
       // Sort by sequence descending (newest ID first)
       state.auditHistory.sort((a, b) => {
@@ -1555,18 +1607,25 @@ window.viewAuditDetail = function (id) {
   const item = state.auditHistory.find(x => x.id === id);
   if (!item) return;
 
+  const dateStr = item.assessmentDate || (item.timestamp ? formatOnlyDate(item.timestamp) : '-');
+  const clinicSnippet = item.clinicalDetails
+    ? (item.clinicalDetails.length > 70 ? item.clinicalDetails.slice(0, 70) + '...' : item.clinicalDetails)
+    : '-';
+
   const shouldLoad = confirm(
     `[ประวัติการประเมิน #${item.id}]\n` +
     `เหตุการณ์: ${item.eventName}\n` +
     `พื้นที่: ${item.location}\n` +
+    `วันที่ประเมิน: ${dateStr}\n` +
     `ผู้ประเมิน: ${item.assessorName}\n` +
+    `ข้อมูลทางคลินิก: ${clinicSnippet}\n` +
     `ระดับความเสี่ยง: ${item.riskLevel} (${item.riskLevelEn} Risk)\n` +
     `สถานะ Google Sheet: ${item.syncedToSheet ? '✅ ซิงก์แล้ว' : '⏳ ยังไม่ซิงก์'}\n\n` +
     `มาตรการที่แนะนำ:\n${item.actions}\n\n` +
     `บทสรุป AI:\n${item.aiSummary}\n\n` +
     `=========================================\n` +
     `👉 ต้องการโหลดเคสนี้ขึ้นมาแก้ไขเพื่อ "บันทึกทับ (Overwrite)" หรือไม่?\n` +
-    `- กด ตกลง (OK): เพื่อโหลดข้อมูลและตั้งค่าให้เซฟทับเรื่องเดิมนี้\n` +
+    `- กด ตกลง (OK): เพื่อดึงข้อมูลเดิมทั้งหมด (รายละเอียดทางคลินิก, วันที่, คำตอบทั้ง 5 มิติ, เกณฑ์ย่อย, และบันทึกข้อความ) ขึ้นมาแก้ไข\n` +
     `- กด ยกเลิก (Cancel): ปิดหน้าต่างนี้`
   );
 
@@ -1579,27 +1638,118 @@ window.loadAuditRecordToForm = function (id) {
   const item = state.auditHistory.find(x => x.id === id);
   if (!item) return;
 
+  // 1. If item has rawPayload as JSON string, parse and merge into item
+  if (item.rawPayload && typeof item.rawPayload === 'string') {
+    try {
+      const parsed = JSON.parse(item.rawPayload);
+      Object.assign(item, parsed);
+    } catch (e) {
+      console.warn('Failed to parse rawPayload for item:', id, e);
+    }
+  }
+
+  // 2. Set Active Assessment ID for in-place overwriting
   setActiveAssessmentId(item.id);
 
-  state.metadata.eventName = item.eventName;
-  state.metadata.location = item.location;
-  state.metadata.assessorName = item.assessorName;
+  // 3. Restore Metadata Fields
+  state.metadata.eventName = item.eventName || '';
+  state.metadata.location = item.location || '';
+  state.metadata.assessmentDate = item.assessmentDate || (item.timestamp ? formatOnlyDate(item.timestamp) : new Date().toISOString().split('T')[0]);
+  state.metadata.assessorName = item.assessorName || '';
+  state.metadata.clinicalDetails = item.clinicalDetails || '';
 
   const eventInput = document.getElementById('eventName');
   const locInput = document.getElementById('location');
+  const dateInput = document.getElementById('assessmentDate');
   const assessorInput = document.getElementById('assessorName');
-  if (eventInput) eventInput.value = item.eventName;
-  if (locInput) locInput.value = item.location;
-  if (assessorInput) assessorInput.value = item.assessorName;
+  const clinicalInput = document.getElementById('clinicalDetails');
 
+  if (eventInput) eventInput.value = state.metadata.eventName;
+  if (locInput) locInput.value = state.metadata.location;
+  if (dateInput && state.metadata.assessmentDate) dateInput.value = state.metadata.assessmentDate;
+  if (assessorInput) assessorInput.value = state.metadata.assessorName;
+  if (clinicalInput) clinicalInput.value = state.metadata.clinicalDetails;
+
+  // 4. Restore Sub-Criteria Choices (Domain 1 - 5)
+  if (item.subAnswers && typeof item.subAnswers === 'object') {
+    state.subAnswers = Object.assign({}, state.subAnswers, item.subAnswers);
+    Object.entries(item.subAnswers).forEach(([subId, val]) => {
+      setSubChoiceVal(subId, val);
+    });
+  }
+
+  // Helper to normalize answers
+  const normalizeVal = (v, defaultVal = 'no') => {
+    if (!v) return defaultVal;
+    const s = String(v).trim().toLowerCase();
+    if (s === 'yes' || s === 'ใช่' || s === 'true' || s === '1') return 'yes';
+    if (s === 'no' || s === 'ไม่ใช่' || s === 'false' || s === '0') return 'no';
+    if (s === 'unk' || s === 'ไม่แน่ชัด' || s === 'unknown') return 'unk';
+    return defaultVal;
+  };
+
+  // 5. Restore Main Domain Answers
+  if (item.answers && typeof item.answers === 'object') {
+    state.answers = Object.assign({}, state.answers, item.answers);
+  } else {
+    // Fallback for legacy rows loaded from Google Sheet or older history
+    if (item.d1_highThreat) state.answers.q1_highThreat = normalizeVal(item.d1_highThreat, 'no');
+    if (item.d2_exposure) state.answers.q2_exposureActive = normalizeVal(item.d2_exposure, 'yes');
+    if (item.d3_severity) state.answers.q3_severityHigh = normalizeVal(item.d3_severity, 'yes');
+    if (item.d4_spread) {
+      const sp = normalizeVal(item.d4_spread, 'yes');
+      state.answers.q4_spreadFuture = sp;
+      state.answers.q4_2_significantCurrent = sp;
+    }
+    if (item.d5_capacity) state.answers.q5_1_capacitySufficient = normalizeVal(item.d5_capacity, 'no');
+  }
+
+  // Update Main Radio UI
+  setMainRadioVal('q1_highThreat', state.answers.q1_highThreat || 'no');
+  setMainRadioVal('q2_exposure', state.answers.q2_exposureActive || 'yes');
+  setMainRadioVal('q3_severity', state.answers.q3_severityHigh || 'yes');
+  setMainRadioVal('q4_spread', state.answers.q4_spreadFuture || 'yes');
+  setMainRadioVal('q4_2_significant', state.answers.q4_2_significantCurrent || 'no');
+  setMainRadioVal('q5_1_capacity', state.answers.q5_1_capacitySufficient || 'no');
+  setMainRadioVal('q5_2_overwhelmed', state.answers.q5_2_systemOverwhelmed || 'no');
+
+  // 6. Restore Domain & Sub-criteria Notes
+  document.querySelectorAll('.domain-notes-textarea, .sub-criterion-input').forEach(inp => {
+    inp.value = '';
+  });
+  state.notes = {};
+
+  if (item.notes && typeof item.notes === 'object') {
+    state.notes = Object.assign({}, item.notes);
+    Object.entries(item.notes).forEach(([noteId, val]) => {
+      const el = document.getElementById(noteId);
+      if (el) el.value = val;
+    });
+  } else if (item.userNotes && item.userNotes !== 'ไม่มีบันทึกเพิ่มเติม') {
+    const q1Note = document.getElementById('note_q1_general');
+    if (q1Note) {
+      q1Note.value = item.userNotes;
+      state.notes['note_q1_general'] = item.userNotes;
+    }
+  }
+
+  // 7. Restore AI Narrative Summary
   if (item.aiSummary && item.aiSummary !== 'ยังไม่มีการสร้างบทสรุป AI') {
     state.aiSummary = item.aiSummary;
     const box = document.getElementById('aiNarrativeBox');
     if (box) box.textContent = item.aiSummary;
+  } else {
+    state.aiSummary = '';
+    const box = document.getElementById('aiNarrativeBox');
+    if (box) box.textContent = 'กดปุ่ม "🌪️ สรุปรายงานสถานการณ์ด้วย Typhoon AI" เพื่อสร้างบทวิเคราะห์ทางการแพทย์';
   }
 
+  // 8. Re-evaluate Risk Algorithm & update all dynamic UI cards & pills
+  evaluateRiskAlgorithm();
+
+  // 9. Smooth scroll to top and show toast
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  showToast(`โหลดเคส #${item.id} (${item.eventName}) แล้ว การบันทึกครั้งต่อไปจะเซฟทับเคสเดิมนี้`, 'info');
+  showToast(`โหลดเคส #${item.id} (${item.eventName}) ทุกรายละเอียดขึ้นมาแก้ไขแล้ว`, 'success');
 };
 
 /**
