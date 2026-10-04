@@ -261,7 +261,13 @@ function doPost(e) {
     var targetId = data.id ? String(data.id).trim().toLowerCase() : "";
     var targetEvent = data.eventName ? String(data.eventName).trim().toLowerCase() : "";
 
-    if (lastRow > 1) {
+    // ป้องกันการเซฟทับข้ามเครื่องเมื่อบันทึกพร้อมกัน (Multi-User Concurrency Protection)
+    // 1. data.isOverwrite === true หรือ data.intendedAction === "overwrite": ผู้ใช้กด "ดู/แก้ไข" เพื่อแก้ไขเคสเดิม
+    // 2. data.isOverwrite === false หรือ data.intendedAction === "create": เคสใหม่ ห้ามเซฟทับแถวอื่นเด็ดขาด!
+    var allowOverwrite = (data.isOverwrite === true || data.intendedAction === "overwrite");
+    var isExplicitNew = (data.isOverwrite === false || data.intendedAction === "create");
+
+    if (!isExplicitNew && lastRow > 1) {
       var idValues = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
       var eventValues = sheet.getRange(2, 3, lastRow - 1, 1).getValues();
 
@@ -269,14 +275,20 @@ function doPost(e) {
         var currentId = String(idValues[i][0]).trim().toLowerCase();
         var currentEvent = String(eventValues[i][0]).trim().toLowerCase();
 
-        // 1. ตรวจสอบจาก Assessment ID ตรงกัน (แก้ไขเคสเดิม)
-        if (targetId && currentId === targetId) {
+        // 1. ผู้ใช้ตั้งใจแก้ไขเคสเดิม (allowOverwrite = true) และ Assessment ID ตรงกัน
+        if (allowOverwrite && targetId && currentId === targetId) {
           existingRowIndex = i + 2;
           break;
         }
 
-        // 2. หาก ID ไม่ตรง แต่ชื่อเหตุการณ์ตรงกัน ให้บันทึกทับเรื่องเดิม
-        if (targetEvent && targetEvent !== "เหตุการณ์ทั่วไป" && currentEvent === targetEvent) {
+        // 2. ผู้ใช้ตั้งใจแก้ไขเคสเดิม และชื่อเหตุการณ์ตรงกันเป๊ะ (ไม่ใช่เหตุการณ์ทั่วไป)
+        if (allowOverwrite && targetEvent && targetEvent !== "เหตุการณ์ทั่วไป" && currentEvent === targetEvent) {
+          existingRowIndex = i + 2;
+          break;
+        }
+
+        // 3. ป้องกันกรณีลูกค้าระบบเก่าที่ไม่ส่ง flag: จะยอมให้เซฟทับได้เฉพาะกรณีทั้ง ID และชื่อเหตุการณ์ตรงกันทั้งคู่เท่านั้น
+        if (!isExplicitNew && !allowOverwrite && targetId && currentId === targetId && targetEvent && currentEvent === targetEvent) {
           existingRowIndex = i + 2;
           break;
         }

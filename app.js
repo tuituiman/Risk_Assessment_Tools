@@ -1159,19 +1159,8 @@ async function saveToGoogleSheets() {
     existingIndex = state.auditHistory.findIndex(r => r.id === targetId);
   }
 
-  // If no targetId or not found by ID, look up by event name + location
-  if (existingIndex === -1 && curEventName && curEventName !== 'เหตุการณ์ทั่วไป') {
-    existingIndex = state.auditHistory.findIndex(r => {
-      const rName = (r.eventName || '').trim().toLowerCase();
-      const rLoc = (r.location || '').trim().toLowerCase();
-      return rName === curEventName.toLowerCase() && (!curLocation || !rLoc || rLoc === curLocation.toLowerCase());
-    });
-    if (existingIndex !== -1) {
-      targetId = state.auditHistory[existingIndex].id;
-    }
-  }
-
-  const isExistingEvent = (existingIndex !== -1);
+  // Only treat as existing event if explicitly loaded via view/edit (targetId active)
+  const isExistingEvent = Boolean(targetId && existingIndex !== -1);
   if (!targetId) {
     targetId = generateNextAssessmentId();
   }
@@ -1185,7 +1174,9 @@ async function saveToGoogleSheets() {
     clinicalDetails: state.metadata.clinicalDetails,
     answers: answersSnapshot,
     subAnswers: subAnswersSnapshot,
-    notes: notesSnapshot
+    notes: notesSnapshot,
+    isOverwrite: isExistingEvent,
+    intendedAction: isExistingEvent ? 'overwrite' : 'create'
   });
 
   let record;
@@ -1212,9 +1203,11 @@ async function saveToGoogleSheets() {
     record.subAnswers = subAnswersSnapshot;
     record.notes = notesSnapshot;
     record.rawPayload = rawPayload;
+    record.isOverwrite = true;
+    record.intendedAction = 'overwrite';
     record.syncedToSheet = false;
   } else {
-    // Brand new event
+    // Brand new event (ห้ามเซฟทับเคสอื่นเด็ดขาด)
     record = {
       id: targetId,
       timestamp: new Date().toLocaleString('th-TH'),
@@ -1237,6 +1230,8 @@ async function saveToGoogleSheets() {
       subAnswers: subAnswersSnapshot,
       notes: notesSnapshot,
       rawPayload: rawPayload,
+      isOverwrite: false,
+      intendedAction: 'create',
       syncedToSheet: false
     };
     state.auditHistory.unshift(record);
