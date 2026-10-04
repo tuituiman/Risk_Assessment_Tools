@@ -33,13 +33,13 @@
       </div>
       <div class="header-actions">
         <button id="btnPresetWuhan" class="btn btn-outline btn-sm" title="โหลดข้อมูลกรณีศึกษาตัวอย่าง">
-          🧪 ตัวอย่างเคสอู่ฮั่น
+          🧪 <span class="btn-text-desktop">ตัวอย่างเคสอู่ฮั่น</span><span class="btn-text-mobile">ตัวอย่าง</span>
         </button>
         <button id="btnOpenSettings" class="btn btn-secondary btn-sm" title="ตั้งค่า Typhoon AI และ Google Sheets">
-          ⚙️ ตั้งค่า API & ชีต
+          ⚙️ <span class="btn-text-desktop">ตั้งค่า API & ชีต</span><span class="btn-text-mobile">ตั้งค่า</span>
         </button>
         <button id="btnResetForm" class="btn btn-danger btn-sm" title="ล้างข้อมูลเริ่มใหม่">
-          🔄 เริ่มใหม่
+          🔄 <span class="btn-text-desktop">เริ่มใหม่</span><span class="btn-text-mobile">เริ่มใหม่</span>
         </button>
       </div>
     </div>
@@ -740,6 +740,8 @@
           <div style="display: flex; gap: 8px;">
             <button id="btnQuickConnectSheet" class="btn btn-sm btn-primary">ใส่ Web App URL เชื่อมต่อ</button>
           </div>
+        <div class="mobile-table-hint mobile-only">
+          <span>👈 ปัดหน้าจอซ้าย-ขวา เพื่อดูตารางประวัติทั้งหมด 👉</span>
         </div>
 
         <div class="table-responsive">
@@ -781,6 +783,13 @@
 
     <!-- Right Column: Results & AI & Google Sheets -->
     <aside class="sidebar-sticky" id="sidebarCol">
+
+      <!-- Mobile Quick Back to Form Button (Visible on mobile only) -->
+      <div class="mobile-only" style="margin-bottom: 12px;">
+        <button id="btnMobileBackToForm" class="btn btn-outline btn-sm" style="width: 100%; min-height: 44px; font-weight: 700; font-size: 0.9rem; background: #fff; border-color: rgba(225, 29, 72, 0.35); color: #be123c;">
+          ⬅️ กลับไปแก้ไขแบบประเมิน (Edit Form)
+        </button>
+      </div>
 
       <!-- Live Risk Assessment Result Card -->
       <div class="glass-card risk-result-card risk-moderate" id="riskResultCard">
@@ -1002,6 +1011,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating Mobile Quick Summary Bar (Shown when in Form tab) -->
+  <aside class="mobile-floating-bar" id="mobileFloatingBar" aria-label="Mobile Summary Bar">
+    <div class="mobile-floating-info">
+      <span class="mobile-floating-label">ผลประเมินขณะนี้:</span>
+      <span class="mobile-floating-badge risk-moderate" id="mobileFloatingText">ความเสี่ยง: ปานกลาง</span>
+    </div>
+    <button class="btn btn-primary btn-sm mobile-floating-btn" id="btnMobileGoToResult">
+      ดูผล & สรุป AI ➔
+    </button>
+  </aside>
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>

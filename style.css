@@ -1670,9 +1670,78 @@ textarea.form-control {
   box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.1);
 }
 
-/* Mobile View Switcher Tab (Hidden on PC by default) */
+/* Mobile & Responsive Utility Classes */
+.mobile-only {
+  display: none !important;
+}
+
+.desktop-only {
+  display: initial !important;
+}
+
+.btn-text-mobile {
+  display: none;
+}
+
+.btn-text-desktop {
+  display: inline;
+}
+
+/* Dynamic Decision Tree Navigation Bar & Breadcrumb */
+.flow-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #fff1f2;
+  border: 1px solid rgba(225, 29, 72, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: 18px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+/* Mobile View Switcher Tab (Hidden on Desktop by default) */
 .mobile-tab-nav {
   display: none;
+}
+
+.mobile-floating-bar {
+  display: none;
+}
+
+/* Risk badge color classes */
+.mobile-risk-badge.risk-low,
+.mobile-floating-badge.risk-low {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.mobile-risk-badge.risk-moderate,
+.mobile-floating-badge.risk-moderate {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.mobile-risk-badge.risk-high,
+.mobile-floating-badge.risk-high {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.mobile-risk-badge.risk-very-high,
+.mobile-floating-badge.risk-very-high {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Desktop override: Ensure both columns are always visible on PC */
+@media (min-width: 1025px) {
+  .mobile-pane-hidden {
+    display: block !important;
+  }
 }
 
 /* Tablet & Mobile Responsive (<= 1024px) */
@@ -1685,8 +1754,8 @@ textarea.form-control {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    padding: 8px 16px;
-    gap: 10px;
+    padding: 8px 12px;
+    gap: 8px;
     border-bottom: 1.5px solid rgba(225, 29, 72, 0.15);
     box-shadow: 0 4px 12px rgba(225, 29, 72, 0.06);
   }
@@ -1697,16 +1766,17 @@ textarea.form-control {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 9px 12px;
+    padding: 10px 12px;
     border-radius: var(--radius-sm);
-    font-size: 0.86rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 700;
     font-family: inherit;
     border: 1px solid rgba(225, 29, 72, 0.2);
     background: #fff5f7;
     color: #881337;
     cursor: pointer;
     transition: var(--transition);
+    min-height: 42px;
   }
 
   .mobile-tab-btn:hover {
@@ -1722,9 +1792,9 @@ textarea.form-control {
 
   .mobile-risk-badge {
     font-size: 0.72rem;
-    padding: 2px 7px;
+    padding: 2px 8px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.28);
     color: inherit;
     font-weight: 700;
   }
@@ -1733,13 +1803,15 @@ textarea.form-control {
     grid-template-columns: 1fr;
     height: auto;
     overflow: visible;
-    padding: 16px 14px 60px;
-    gap: 20px;
+    padding: 14px 12px 100px;
+    gap: 16px;
+    max-width: 100%;
   }
 
   body {
     height: auto;
-    overflow: visible;
+    overflow-x: hidden;
+    max-width: 100%;
   }
 
   .wizard-col,
@@ -1752,54 +1824,328 @@ textarea.form-control {
   .sidebar-sticky {
     position: static;
   }
+
+  .mobile-pane-hidden {
+    display: none !important;
+  }
+
+  /* Floating Bottom Quick Summary Bar */
+  .mobile-floating-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 990;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1.5px solid rgba(225, 29, 72, 0.2);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    gap: 10px;
+  }
+
+  .mobile-floating-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mobile-floating-label {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .mobile-floating-badge {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .mobile-floating-btn {
+    padding: 8px 14px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+    min-height: 38px;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.28);
+  }
+}
+
+/* Prevent iOS Safari auto-zoom on input focus */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="date"],
+  input[type="search"],
+  select,
+  textarea,
+  .form-control,
+  .sub-criterion-input {
+    font-size: 16px !important;
+  }
 }
 
 /* Smartphone Responsive (<= 640px) */
 @media (max-width: 640px) {
+  .mobile-only {
+    display: block !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .btn-text-mobile {
+    display: inline;
+  }
+
+  .btn-text-desktop {
+    display: none;
+  }
+
+  html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .app-header {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .header-container {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: stretch;
+    gap: 8px;
   }
 
   .brand-section {
     width: 100%;
     justify-content: flex-start;
+    gap: 10px;
   }
 
   .brand-logo {
-    width: 38px;
-    height: 38px;
-    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    min-width: 36px;
   }
 
   .brand-text h1 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .brand-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  .brand-sub {
+    font-size: 0.74rem;
+    line-height: 1.35;
   }
 
   .header-actions {
     width: 100%;
     display: flex;
     justify-content: space-between;
-    gap: 6px;
+    gap: 5px;
   }
 
   .header-actions .btn {
-    flex: 1;
-    padding: 6px 8px;
-    font-size: 0.76rem;
+    flex: 1 1 0;
+    padding: 8px 6px;
+    font-size: 0.78rem;
+    min-height: 38px;
     justify-content: center;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  /* Step Indicator Progress Bar on Mobile */
+  .step-indicator-bar {
+    margin: 12px 0 6px;
+  }
+
+  .step-indicator-bar::before {
+    top: 17px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .step-progress-line {
+    top: 17px;
+    left: 12px;
+  }
+
+  .step-bubble .bubble-num {
+    width: 34px;
+    height: 34px;
+    font-size: 0.88rem;
+  }
+
+  .step-bubble .bubble-label {
+    display: none; /* Hide labels so 5 bubbles fit across mobile screens */
   }
 
   .glass-card {
-    padding: 16px 14px;
+    padding: 14px 12px;
     border-radius: var(--radius-md);
+    margin-bottom: 16px;
   }
 
+  .event-info-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  #eventEditStatusTag {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+    font-size: 0.76rem;
+    padding: 6px 10px;
+  }
+
+  .dynamic-question-card {
+    padding: 16px 12px;
+    margin-bottom: 20px;
+  }
+
+  .dynamic-question-card .step-title-area h2 {
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+
+  .dynamic-question-card .step-subtitle {
+    font-size: 0.82rem;
+  }
+
+  .q-label {
+    font-size: 0.94rem;
+  }
+
+  .option-group {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .opt-card {
+    padding: 12px 14px;
+    min-height: 48px;
+  }
+
+  .opt-text {
+    font-size: 0.88rem;
+  }
+
+  /* Sub-criteria touch targets */
+  .sub-criteria-drawer {
+    padding: 12px 10px;
+  }
+
+  .sub-criterion-item {
+    padding: 10px;
+    min-height: 44px;
+    gap: 10px;
+  }
+
+  .sub-criterion-checkbox {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 2px;
+  }
+
+  .sub-criterion-title {
+    font-size: 0.84rem;
+  }
+
+  .sub-criterion-desc {
+    font-size: 0.76rem;
+  }
+
+  .domain-note-box {
+    margin-top: 14px;
+  }
+
+  /* Results Card on Mobile */
+  .risk-header-title {
+    font-size: 0.95rem;
+  }
+
+  .risk-badge-box {
+    padding: 14px 12px;
+  }
+
+  .risk-badge-level {
+    font-size: 1.25rem;
+  }
+
+  .risk-badge-level-en {
+    font-size: 0.82rem;
+  }
+
+  .risk-verdict-summary {
+    padding: 12px 10px;
+  }
+
+  .verdict-desc {
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .domain-pills {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .domain-pill-item {
+    font-size: 0.82rem;
+    padding: 7px 10px;
+  }
+
+  .actions-list li {
+    font-size: 0.84rem;
+    padding: 8px 10px;
+  }
+
+  .ai-output-box {
+    font-size: 0.88rem;
+    padding: 12px;
+    max-height: 380px;
+    line-height: 1.6;
+  }
+
+  /* Table swipe hint */
+  .mobile-table-hint {
+    background: #fff1f2;
+    border: 1px dashed rgba(225, 29, 72, 0.35);
+    color: #9f1239;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.76rem;
+    text-align: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* Audit controls on mobile */
   .card-title-row {
     flex-direction: column;
     align-items: flex-start;
@@ -1809,21 +2155,83 @@ textarea.form-control {
   .audit-header-actions {
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
   }
 
   .audit-header-actions .btn {
-    flex: 1;
+    flex: 1 1 calc(50% - 6px);
     font-size: 0.78rem;
-    padding: 6px 8px;
+    padding: 8px 6px;
+    min-height: 40px;
+    justify-content: center;
   }
 
-  .choice-grid {
-    grid-template-columns: 1fr;
+  .audit-filters-bar {
+    flex-direction: column;
+    gap: 8px;
   }
 
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Modals */
   .modal-overlay {
-    padding: 12px;
+    padding: 10px;
+  }
+
+  .modal-dialog {
+    width: 95vw;
+    max-width: 95vw;
+    margin: 8px auto;
+    padding: 16px 14px;
+    max-height: 88vh;
+    box-sizing: border-box;
+  }
+
+  .modal-header h3 {
+    font-size: 1.05rem;
+  }
+
+  .modal-close-btn {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Toast Notification */
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 80px; /* Above the mobile floating bar */
+    max-width: none;
+    align-items: center;
+  }
+
+  .toast {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    box-sizing: border-box;
   }
 
   .site-footer-badge {

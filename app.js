@@ -556,10 +556,12 @@ function renderResultCard() {
   const mobBadge = document.getElementById('mobileRiskBadge');
   if (mobBadge) {
     mobBadge.textContent = assessmentResult.levelTh;
+    mobBadge.className = `mobile-risk-badge risk-${assessmentResult.riskClass}`;
   }
   const mobFloatText = document.getElementById('mobileFloatingText');
   if (mobFloatText) {
     mobFloatText.textContent = `ความเสี่ยง: ${assessmentResult.levelTh}`;
+    mobFloatText.className = `mobile-floating-badge risk-${assessmentResult.riskClass}`;
   }
 }
 
@@ -2268,36 +2270,66 @@ function copyAiSummary() {
 }
 
 /**
- * Mobile Navigation & Smooth Scroll Helpers
+ * Mobile Navigation & Dynamic View Switching
  */
 function setupMobileTabs() {
   const btnTabForm = document.getElementById('btnMobileTabForm');
   const btnTabResult = document.getElementById('btnMobileTabResult');
   const wizardCol = document.getElementById('wizardCol');
   const sidebarCol = document.getElementById('sidebarCol');
-  const riskResultCard = document.getElementById('riskResultCard');
+  const floatingBar = document.getElementById('mobileFloatingBar');
+  const btnGoToResult = document.getElementById('btnMobileGoToResult');
+  const btnBackToForm = document.getElementById('btnMobileBackToForm');
 
-  if (wizardCol) wizardCol.classList.remove('mobile-pane-hidden');
-  if (sidebarCol) sidebarCol.classList.remove('mobile-pane-hidden');
+  function isMobileView() {
+    return window.innerWidth <= 1024;
+  }
 
-  function scrollToSection(target) {
+  function switchTab(target) {
+    if (!isMobileView()) {
+      if (wizardCol) wizardCol.classList.remove('mobile-pane-hidden');
+      if (sidebarCol) sidebarCol.classList.remove('mobile-pane-hidden');
+      if (floatingBar) floatingBar.style.display = 'none';
+      return;
+    }
+
     if (target === 'result') {
       if (btnTabResult) btnTabResult.classList.add('active');
       if (btnTabForm) btnTabForm.classList.remove('active');
-      if (riskResultCard) {
-        riskResultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      if (wizardCol) wizardCol.classList.add('mobile-pane-hidden');
+      if (sidebarCol) sidebarCol.classList.remove('mobile-pane-hidden');
+      if (floatingBar) floatingBar.style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       if (btnTabForm) btnTabForm.classList.add('active');
       if (btnTabResult) btnTabResult.classList.remove('active');
-      if (wizardCol) {
-        wizardCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      if (wizardCol) wizardCol.classList.remove('mobile-pane-hidden');
+      if (sidebarCol) sidebarCol.classList.add('mobile-pane-hidden');
+      if (floatingBar) floatingBar.style.display = 'flex';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  if (btnTabForm) btnTabForm.addEventListener('click', () => scrollToSection('form'));
-  if (btnTabResult) btnTabResult.addEventListener('click', () => scrollToSection('result'));
+  if (btnTabForm) btnTabForm.addEventListener('click', () => switchTab('form'));
+  if (btnTabResult) btnTabResult.addEventListener('click', () => switchTab('result'));
+  if (btnGoToResult) btnGoToResult.addEventListener('click', () => switchTab('result'));
+  if (btnBackToForm) btnBackToForm.addEventListener('click', () => switchTab('form'));
+
+  // Initial state check
+  if (isMobileView()) {
+    switchTab('form');
+  }
+
+  window.addEventListener('resize', () => {
+    if (!isMobileView()) {
+      if (wizardCol) wizardCol.classList.remove('mobile-pane-hidden');
+      if (sidebarCol) sidebarCol.classList.remove('mobile-pane-hidden');
+      if (floatingBar) floatingBar.style.display = 'none';
+    } else {
+      const isResultActive = btnTabResult && btnTabResult.classList.contains('active');
+      switchTab(isResultActive ? 'result' : 'form');
+    }
+  });
 }
 
 // Initialise application on DOM ready
