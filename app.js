@@ -10,6 +10,20 @@
  * ==============================================================================
  */
 
+// ==============================================================================
+// Global Error Telemetry & Safety Diagnostics (ดักจับและรายงาน Error ทั้งหมด)
+// ==============================================================================
+window.addEventListener('error', (event) => {
+  console.error('[IRA Runtime Error]', event.error || event.message);
+  if (typeof showToast === 'function') {
+    showToast(`⚠️ เกิดข้อผิดพลาดในระบบ: ${event.message || 'ตรวจพบ Runtime Error'}`, 'error');
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.warn('[IRA Unhandled Promise Rejection]', event.reason);
+});
+
 // Application State
 const state = {
   currentAssessmentId: null, // Track currently active assessment ID (null = new case)
@@ -724,25 +738,33 @@ window.promptDeleteEvent = function (id) {
   state.deleteTargetId = id;
   state.deleteTargetName = item ? item.eventName : id;
 
-  const idEl = document.getElementById('deleteEventId');
-  const nameEl = document.getElementById('deleteEventName');
+  const idEl = document.getElementById('delModalEventId') || document.getElementById('deleteEventId');
+  const nameEl = document.getElementById('delModalEventName') || document.getElementById('deleteEventName');
+  const dateEl = document.getElementById('delModalDate');
   const userInp = document.getElementById('deleteUsername');
   const passInp = document.getElementById('deletePassword');
   const errBox = document.getElementById('deleteAuthError');
-  const modal = document.getElementById('deleteConfirmModal');
+  const modal = document.getElementById('deleteAuthModal') || document.getElementById('deleteConfirmModal');
 
   if (idEl) idEl.textContent = id;
   if (nameEl) nameEl.textContent = state.deleteTargetName;
+  if (dateEl) dateEl.textContent = item && item.assessmentDate ? item.assessmentDate : (item && item.timestamp ? window.IraSheets.formatOnlyDate(item.timestamp) : '-');
   if (userInp) userInp.value = '';
   if (passInp) passInp.value = '';
   if (errBox) errBox.style.display = 'none';
 
-  if (modal) modal.classList.add('open');
+  if (modal) {
+    modal.classList.add('open', 'active');
+    modal.style.display = 'flex';
+  }
 };
 
 function closeDeleteModal() {
-  const modal = document.getElementById('deleteConfirmModal');
-  if (modal) modal.classList.remove('open');
+  const modal = document.getElementById('deleteAuthModal') || document.getElementById('deleteConfirmModal');
+  if (modal) {
+    modal.classList.remove('open', 'active');
+    modal.style.display = 'none';
+  }
   state.deleteTargetId = null;
   state.deleteTargetName = '';
 }
@@ -927,6 +949,36 @@ function setupSubCriteriaDrawers() {
 }
 
 /**
+ * ฟังก์ชันเปิดหน้าต่างตั้งค่า (Global Settings Modal Opener)
+ */
+window.openSettingsModal = function () {
+  const modal = document.getElementById('settingsModal');
+  const inputApiKey = document.getElementById('settingTyphoonApiKey');
+  const selectModel = document.getElementById('settingTyphoonModel');
+  const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
+
+  if (inputApiKey) inputApiKey.value = state.settings.typhoonApiKey || '';
+  if (selectModel) selectModel.value = state.settings.typhoonModel || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct');
+  if (inputSheetsUrl) inputSheetsUrl.value = state.settings.googleSheetsUrl || '';
+
+  if (modal) {
+    modal.classList.add('open', 'active');
+    modal.style.display = 'flex';
+  }
+};
+
+/**
+ * ฟังก์ชันปิดหน้าต่างตั้งค่า (Global Settings Modal Closer)
+ */
+window.closeSettingsModal = function () {
+  const modal = document.getElementById('settingsModal');
+  if (modal) {
+    modal.classList.remove('open', 'active');
+    modal.style.display = 'none';
+  }
+};
+
+/**
  * ควบคุม Modal ตั้งค่าการเชื่อมต่อ (Settings Modal)
  */
 function setupSettingsModal() {
@@ -939,19 +991,23 @@ function setupSettingsModal() {
   const selectModel = document.getElementById('settingTyphoonModel');
   const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
 
-  function openSettings() {
-    if (inputApiKey) inputApiKey.value = state.settings.typhoonApiKey;
-    if (selectModel) selectModel.value = state.settings.typhoonModel;
-    if (inputSheetsUrl) inputSheetsUrl.value = state.settings.googleSheetsUrl;
-    if (modal) modal.classList.add('open');
+  if (btnOpen) btnOpen.addEventListener('click', window.openSettingsModal);
+  if (btnClose) btnClose.addEventListener('click', window.closeSettingsModal);
+
+  // ปิดเมื่อคลิกนอกกล่อง Dialog
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) window.closeSettingsModal();
+    });
   }
 
-  function closeSettings() {
-    if (modal) modal.classList.remove('open');
-  }
-
-  if (btnOpen) btnOpen.addEventListener('click', openSettings);
-  if (btnClose) btnClose.addEventListener('click', closeSettings);
+  // ปิดด้วยปุ่ม Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      window.closeSettingsModal();
+      if (typeof closeDeleteModal === 'function') closeDeleteModal();
+    }
+  });
 
   if (btnSave) {
     btnSave.addEventListener('click', () => {
@@ -967,7 +1023,7 @@ function setupSettingsModal() {
       localStorage.setItem('ira_typhoon_model', newModel);
       localStorage.setItem('ira_google_sheets_url', newSheetsUrl);
 
-      closeSettings();
+      window.closeSettingsModal();
       updateGoogleSheetsStatusUI();
       showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว!', 'success');
 
@@ -1165,8 +1221,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnExportCsv) btnExportCsv.addEventListener('click', () => window.IraSheets.exportHistoryCSV(state, showToast));
   if (btnPresetWuhan) btnPresetWuhan.addEventListener('click', loadPresetWuhanOutbreak);
   if (btnPullSheet) btnPullSheet.addEventListener('click', () => window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers()));
-  if (btnConnectSheetAudit) btnConnectSheetAudit.addEventListener('click', () => document.getElementById('btnOpenSettings')?.click());
-  if (btnQuickConnectSheet) btnQuickConnectSheet.addEventListener('click', () => document.getElementById('btnOpenSettings')?.click());
+  if (btnConnectSheetAudit) btnConnectSheetAudit.addEventListener('click', window.openSettingsModal);
+  if (btnQuickConnectSheet) btnQuickConnectSheet.addEventListener('click', window.openSettingsModal);
 
   if (btnResetToNewCase) {
     btnResetToNewCase.addEventListener('click', () => {
