@@ -866,6 +866,7 @@
         <div class="card-title-row">
           <h3>🌪️ Typhoon AI สรุปรายงาน</h3>
           <div style="display: flex; gap: 6px;">
+            <button id="btnPromptCustomizeShortcut" class="btn btn-outline btn-sm" title="ตั้งค่าและปรับแต่งคำสั่ง Prompt สำหรับ AI">✍️ ปรับแต่ง Prompt</button>
             <button id="btnCopyAi" class="btn btn-outline btn-sm" title="คัดลอกข้อความ">📋 คัดลอก</button>
           </div>
         </div>
@@ -911,58 +912,117 @@
 
   <!-- Settings Modal Popup -->
   <div class="modal-overlay" id="settingsModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 680px; width: 95vw;">
       <div class="modal-header">
-        <h3>⚙️ ตั้งค่าการเชื่อมต่อ (Integration Settings)</h3>
+        <h3 id="settingsModalHeaderTitle">⚙️ การตั้งค่าระบบ (System Settings)</h3>
         <button class="modal-close-btn" id="btnCloseSettings">&times;</button>
       </div>
       <div class="modal-body">
 
-        <div class="form-group">
-          <label for="settingTyphoonApiKey">Typhoon AI API Key</label>
-          <input type="password" id="settingTyphoonApiKey" class="form-control" placeholder="typhoon-xxxxxxxxxxxxxxxx">
-          <small style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
-              target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่าง
-            ระบบจะใช้โหมดจำลอง)</small>
+        <!-- Settings Sub-Tabs Navigation -->
+        <div class="settings-tab-nav">
+          <button type="button" class="btn-settings-tab active" id="tabBtnSettingsGeneral">🔌 การเชื่อมต่อ API & Sheets</button>
+          <button type="button" class="btn-settings-tab" id="tabBtnSettingsPrompt">✍️ ปรับแต่ง Prompt ของ AI</button>
         </div>
 
-        <div class="form-group">
-          <label for="settingTyphoonModel">โมเดล Typhoon (Model Name)</label>
-          <select id="settingTyphoonModel" class="form-control">
-            <option value="typhoon-v2.5-30b-a3b-instruct" selected>typhoon-v2.5-30b-a3b-instruct (แนะนำ - Flagship
-              ล่าสุด)</option>
-            <option value="typhoon-v2.1-12b-instruct">typhoon-v2.1-12b-instruct (ประมวลผลเร็ว / 56k)</option>
-            <option value="typhoon-v1.5-instruct">typhoon-v1.5-instruct (เวอร์ชันมาตรฐานเดิม)</option>
-            <option value="custom">-- ระบุชื่อโมเดลเอง (Custom Model) --</option>
-          </select>
-          <input type="text" id="settingTyphoonModelCustom" class="form-control"
-            placeholder="พิมพ์ชื่อโมเดลอื่น ๆ เช่น typhoon-v2.5-..." style="display: none; margin-top: 6px;">
-          <small style="color: #475569; font-size: 0.75rem;">โมเดลที่แนะนำสำหรับ OpenTyphoon ปัจจุบันคือซีรีส์
-            2.5/2.1</small>
+        <!-- Tab 1: General Settings Pane (API & Sheets) -->
+        <div id="settingsPaneGeneral">
+          <div class="form-group">
+            <label for="settingTyphoonApiKey">Typhoon AI API Key</label>
+            <input type="password" id="settingTyphoonApiKey" class="form-control" placeholder="typhoon-xxxxxxxxxxxxxxxx">
+            <small style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
+                target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่าง
+              ระบบจะใช้โหมดจำลอง)</small>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label for="settingTyphoonModel">โมเดล Typhoon (Model Name)</label>
+            <select id="settingTyphoonModel" class="form-control">
+              <option value="typhoon-v2.5-30b-a3b-instruct" selected>typhoon-v2.5-30b-a3b-instruct (แนะนำ - Flagship
+                ล่าสุด)</option>
+              <option value="typhoon-v2.1-12b-instruct">typhoon-v2.1-12b-instruct (ประมวลผลเร็ว / 56k)</option>
+              <option value="typhoon-v1.5-instruct">typhoon-v1.5-instruct (เวอร์ชันมาตรฐานเดิม)</option>
+              <option value="custom">-- ระบุชื่อโมเดลเอง (Custom Model) --</option>
+            </select>
+            <input type="text" id="settingTyphoonModelCustom" class="form-control"
+              placeholder="พิมพ์ชื่อโมเดลอื่น ๆ เช่น typhoon-v2.5-..." style="display: none; margin-top: 6px;">
+            <small style="color: #475569; font-size: 0.75rem;">โมเดลที่แนะนำสำหรับ OpenTyphoon ปัจจุบันคือซีรีส์
+              2.5/2.1</small>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
+
+          <div class="form-group">
+            <label for="settingGoogleSheetsUrl">Google Apps Script Web App URL</label>
+            <input type="url" id="settingGoogleSheetsUrl" class="form-control"
+              placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+            <small style="color: #475569; font-size: 0.78rem;">URL ของ Web App ที่ได้จากการ Deploy Google Apps Script
+              (ดูโค้ดและวิธีติดตั้งในไฟล์ google_apps_script.js)</small>
+          </div>
+
+          <div class="security-note-box" style="margin-top: 14px;">
+            <span style="font-size: 1.15rem; flex-shrink: 0;">🛡️</span>
+            <div>
+              <strong style="color: #0369a1; font-weight: 700;">ความปลอดภัยของข้อมูล:</strong> ข้อมูล API Key และ Sheet
+              URL จะถูกบันทึกไว้ใน Browser LocalStorage ของอุปกรณ์เครื่องนี้เท่านั้น
+              ไม่มีการส่งไปเก็บไว้ที่เซิร์ฟเวอร์ภายนอกอื่นใด
+            </div>
+          </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid var(--border-color);">
+        <!-- Tab 2: Prompt Customization Pane -->
+        <div id="settingsPanePrompt" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong style="color: #881337; font-size: 0.92rem;">เลือกเทมเพลตมาตรฐาน (Prompt Presets):</strong>
+              <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">คลิกเลือกแม่แบบสำเร็จรูป หรือพิมพ์ปรับแต่งข้อความด้านล่างได้เอง 100%</div>
+            </div>
+            <button type="button" id="btnResetPromptDefault" class="btn btn-outline-danger btn-sm" style="font-size: 0.76rem; padding: 4px 10px;" title="ล้างการปรับแต่งและคืนค่ามาตรฐาน">
+              🔄 คืนค่าเริ่มต้น (Reset)
+            </button>
+          </div>
 
-        <div class="form-group">
-          <label for="settingGoogleSheetsUrl">Google Apps Script Web App URL</label>
-          <input type="url" id="settingGoogleSheetsUrl" class="form-control"
-            placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-          <small style="color: #475569; font-size: 0.78rem;">URL ของ Web App ที่ได้จากการ Deploy Google Apps Script
-            (ดูโค้ดและวิธีติดตั้งในไฟล์ google_apps_script.js)</small>
-        </div>
+          <!-- Preset Selector Buttons -->
+          <div class="prompt-preset-buttons" style="margin-bottom: 14px;">
+            <button type="button" class="btn-preset-select active" data-preset="who_standard">📘 มาตรฐาน WHO IRA (3 ย่อหน้า)</button>
+            <button type="button" class="btn-preset-select" data-preset="executive_brief">📗 สรุปด่วนผู้บริหาร (Executive)</button>
+            <button type="button" class="btn-preset-select" data-preset="epidemiology_investigation">📙 เชิงลึกสอบสวนโรค</button>
+            <button type="button" class="btn-preset-select" data-preset="custom">⚙️ กำหนดเอง (Custom)</button>
+          </div>
 
-        <div class="security-note-box">
-          <span style="font-size: 1.15rem; flex-shrink: 0;">🛡️</span>
-          <div>
-            <strong style="color: #0369a1; font-weight: 700;">ความปลอดภัยของข้อมูล:</strong> ข้อมูล API Key และ Sheet
-            URL จะถูกบันทึกไว้ใน Browser LocalStorage ของอุปกรณ์เครื่องนี้เท่านั้น
-            ไม่มีการส่งไปเก็บไว้ที่เซิร์ฟเวอร์ภายนอกอื่นใด
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="settingCustomSystemPrompt" style="font-weight: 700; color: #1e293b; margin: 0; font-size: 0.85rem;">1. System Prompt (บทบาท & โครงสร้างรายงาน):</label>
+              <span id="promptCharCount" style="font-size: 0.74rem; color: #64748b;">0 ตัวอักษร</span>
+            </div>
+            <textarea id="settingCustomSystemPrompt" class="form-control" rows="8" style="font-family: Consolas, monospace; font-size: 0.82rem; line-height: 1.5; resize: vertical;" placeholder="พิมพ์หรือปรับแต่งคำสั่ง System Prompt สำหรับกำหนดบทบาทและแนวทางการเขียนของ AI..."></textarea>
+            <small style="color: #64748b; font-size: 0.75rem;">กำหนดว่าให้ AI สวมบทบาทอะไร, โครงสร้างย่อหน้า, ภาษา และกฎการตัดข้อมูลข้อย่อยที่ขัดแย้ง</small>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="settingCustomDirectives" style="font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 0.85rem;">2. คำสั่งและข้อกำหนดพิเศษเพิ่มเติม (Custom Directives):</label>
+            <textarea id="settingCustomDirectives" class="form-control" rows="2" style="font-size: 0.84rem; resize: vertical;" placeholder="เช่น เน้นข้อเสนอแนะสำหรับพื้นที่ สคร.1 เชียงใหม่, เน้นกลุ่มเสี่ยงผู้สูงอายุ, ไม่ต้องระบุชื่อโรงพยาบาล..."></textarea>
+            <small style="color: #64748b; font-size: 0.75rem;">คำสั่งเฉพาะกิจนี้จะถูกผนวกเข้ากับ User Prompt เสมอในทุกครั้งที่สั่งให้ AI ประมวลผล</small>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 12px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">🏷️ คลิกเพื่อคัดลอกตัวแปรที่ระบบส่งให้ AI อัตโนมัติ:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 5px;" id="promptVarTagsContainer">
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ชื่อเหตุการณ์" data-tag="{{eventName}}">{{eventName}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: พื้นที่เกิดเหตุ" data-tag="{{location}}">{{location}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: วันที่ประเมิน" data-tag="{{assessmentDate}}">{{assessmentDate}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ประเด็นที่ประเมิน" data-tag="{{riskQuestion}}">{{riskQuestion}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ข้อมูลอาการคลินิก" data-tag="{{clinicalDetails}}">{{clinicalDetails}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ผลระดับความเสี่ยง" data-tag="{{riskLevel}}">{{riskLevel}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: มาตรการที่แนะนำ" data-tag="{{suggestedActions}}">{{suggestedActions}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: บันทึกย่อย 5 มิติ" data-tag="{{userNotes}}">{{userNotes}}</span>
+            </div>
           </div>
         </div>
 
       </div>
       <div class="modal-footer">
-        <button id="btnSaveSettings" class="btn btn-primary">บันทึกการตั้งค่า</button>
+        <button id="btnSaveSettings" class="btn btn-primary">💾 บันทึกการตั้งค่า</button>
       </div>
     </div>
   </div>

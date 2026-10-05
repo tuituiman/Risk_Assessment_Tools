@@ -82,7 +82,10 @@ const state = {
   settings: {
     typhoonApiKey: localStorage.getItem('ira_typhoon_api_key') || '',
     typhoonModel: localStorage.getItem('ira_typhoon_model') || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct'),
-    googleSheetsUrl: localStorage.getItem('ira_google_sheets_url') || ''
+    googleSheetsUrl: localStorage.getItem('ira_google_sheets_url') || '',
+    customSystemPrompt: localStorage.getItem('ira_custom_system_prompt') || '',
+    customDirectives: localStorage.getItem('ira_custom_directives') || '',
+    promptPreset: localStorage.getItem('ira_prompt_preset') || 'who_standard'
   },
   auditHistory: JSON.parse(localStorage.getItem('ira_audit_history') || '[]'),
   deleteTargetId: null,
@@ -356,7 +359,8 @@ async function generateAiSummary() {
 
   const userNotesCompiled = compileUserNotes();
   const systemPrompt = window.IraPrompts.getSystemPrompt();
-  const userPrompt = window.IraPrompts.buildUserPrompt(state.metadata, state.answers, state.assessmentResult, userNotesCompiled);
+  const userDirectives = window.IraPrompts.getUserDirectives();
+  const userPrompt = window.IraPrompts.buildUserPrompt(state.metadata, state.answers, state.assessmentResult, userNotesCompiled, userDirectives);
 
   try {
     if (!apiKey) {
@@ -1202,17 +1206,64 @@ function setupSubCriteriaDrawers() {
 }
 
 /**
- * ฟังก์ชันเปิดหน้าต่างตั้งค่า (Global Settings Modal Opener)
+ * สลับแท็บย่อยภายใน Settings Modal (API & Sheets vs Prompt Studio)
  */
-window.openSettingsModal = function () {
+window.switchSettingsSubTab = function (tabName) {
+  const paneGeneral = document.getElementById('settingsPaneGeneral');
+  const panePrompt = document.getElementById('settingsPanePrompt');
+  const tabGeneral = document.getElementById('tabBtnSettingsGeneral');
+  const tabPrompt = document.getElementById('tabBtnSettingsPrompt');
+
+  if (tabName === 'prompt') {
+    if (paneGeneral) paneGeneral.style.display = 'none';
+    if (panePrompt) panePrompt.style.display = 'block';
+    if (tabGeneral) tabGeneral.classList.remove('active');
+    if (tabPrompt) tabPrompt.classList.add('active');
+  } else {
+    if (paneGeneral) paneGeneral.style.display = 'block';
+    if (panePrompt) panePrompt.style.display = 'none';
+    if (tabGeneral) tabGeneral.classList.add('active');
+    if (tabPrompt) tabPrompt.classList.remove('active');
+  }
+};
+
+/**
+ * ฟังก์ชันเปิดหน้าต่างตั้งค่า (Global Settings Modal Opener)
+ * @param {string} initialTab - 'general' หรือ 'prompt'
+ */
+window.openSettingsModal = function (initialTab = 'general') {
   const modal = document.getElementById('settingsModal');
   const inputApiKey = document.getElementById('settingTyphoonApiKey');
   const selectModel = document.getElementById('settingTyphoonModel');
   const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
+  const customPromptEl = document.getElementById('settingCustomSystemPrompt');
+  const customDirectivesEl = document.getElementById('settingCustomDirectives');
+  const charCountEl = document.getElementById('promptCharCount');
 
   if (inputApiKey) inputApiKey.value = state.settings.typhoonApiKey || '';
   if (selectModel) selectModel.value = state.settings.typhoonModel || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct');
   if (inputSheetsUrl) inputSheetsUrl.value = state.settings.googleSheetsUrl || '';
+
+  // โหลดค่า System Prompt และ Directives ปัจจุบัน
+  const effectiveSystemPrompt = window.IraPrompts.getSystemPrompt();
+  const effectiveDirectives = window.IraPrompts.getUserDirectives();
+  const activePreset = window.IraPrompts.getActivePresetId();
+
+  if (customPromptEl) {
+    customPromptEl.value = effectiveSystemPrompt;
+    if (charCountEl) charCountEl.textContent = `${effectiveSystemPrompt.length} ตัวอักษร`;
+  }
+  if (customDirectivesEl) {
+    customDirectivesEl.value = effectiveDirectives;
+  }
+
+  // อัปเดตสถานะปุ่มเลือก Preset
+  document.querySelectorAll('.btn-preset-select').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.preset === activePreset);
+  });
+
+  // สลับแท็บตามที่ส่งเข้ามา
+  window.switchSettingsSubTab(initialTab);
 
   if (modal) {
     modal.classList.add('open', 'active');
@@ -1232,7 +1283,7 @@ window.closeSettingsModal = function () {
 };
 
 /**
- * ควบคุม Modal ตั้งค่าการเชื่อมต่อ (Settings Modal)
+ * ควบคุม Modal ตั้งค่าการเชื่อมต่อ และการปรับแต่ง AI Prompt (Settings Modal)
  */
 function setupSettingsModal() {
   const modal = document.getElementById('settingsModal');
@@ -1243,9 +1294,21 @@ function setupSettingsModal() {
   const inputApiKey = document.getElementById('settingTyphoonApiKey');
   const selectModel = document.getElementById('settingTyphoonModel');
   const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
+  const customPromptEl = document.getElementById('settingCustomSystemPrompt');
+  const customDirectivesEl = document.getElementById('settingCustomDirectives');
+  const charCountEl = document.getElementById('promptCharCount');
+  const btnResetPrompt = document.getElementById('btnResetPromptDefault');
+  const btnPromptShortcut = document.getElementById('btnPromptCustomizeShortcut');
 
-  if (btnOpen) btnOpen.addEventListener('click', window.openSettingsModal);
+  const tabGeneral = document.getElementById('tabBtnSettingsGeneral');
+  const tabPrompt = document.getElementById('tabBtnSettingsPrompt');
+
+  if (btnOpen) btnOpen.addEventListener('click', () => window.openSettingsModal('general'));
+  if (btnPromptShortcut) btnPromptShortcut.addEventListener('click', () => window.openSettingsModal('prompt'));
   if (btnClose) btnClose.addEventListener('click', window.closeSettingsModal);
+
+  if (tabGeneral) tabGeneral.addEventListener('click', () => window.switchSettingsSubTab('general'));
+  if (tabPrompt) tabPrompt.addEventListener('click', () => window.switchSettingsSubTab('prompt'));
 
   // ปิดเมื่อคลิกนอกกล่อง Dialog
   if (modal) {
@@ -1262,6 +1325,92 @@ function setupSettingsModal() {
     }
   });
 
+  // ปุ่มเลือก Preset
+  document.querySelectorAll('.btn-preset-select').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const presetId = btn.dataset.preset;
+      document.querySelectorAll('.btn-preset-select').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (presetId === 'custom') {
+        if (customPromptEl) customPromptEl.focus();
+        return;
+      }
+
+      const presets = window.IraPrompts.getPresets();
+      const chosen = presets[presetId];
+      if (chosen) {
+        if (customPromptEl) {
+          customPromptEl.value = chosen.systemPrompt;
+          if (charCountEl) charCountEl.textContent = `${chosen.systemPrompt.length} ตัวอักษร`;
+        }
+        if (customDirectivesEl) {
+          customDirectivesEl.value = chosen.directives || '';
+        }
+        showToast(`เลือกเทมเพลต "${chosen.name}" แล้ว (กดบันทึกเพื่อเริ่มใช้งาน)`, 'info');
+      }
+    });
+  });
+
+  // นับจำนวนตัวอักษรของ System Prompt และตรวจจับการแก้ไขเอง
+  if (customPromptEl) {
+    customPromptEl.addEventListener('input', () => {
+      if (charCountEl) charCountEl.textContent = `${customPromptEl.value.length} ตัวอักษร`;
+      const presets = window.IraPrompts.getPresets();
+      const currentActive = document.querySelector('.btn-preset-select.active');
+      if (currentActive && currentActive.dataset.preset !== 'custom') {
+        const chosen = presets[currentActive.dataset.preset];
+        if (chosen && chosen.systemPrompt !== customPromptEl.value) {
+          document.querySelectorAll('.btn-preset-select').forEach(b => {
+            b.classList.toggle('active', b.dataset.preset === 'custom');
+          });
+        }
+      }
+    });
+  }
+
+  // ปุ่มคืนค่าเริ่มต้นของ Prompt (Reset to Default)
+  if (btnResetPrompt) {
+    btnResetPrompt.addEventListener('click', () => {
+      const activeBtn = document.querySelector('.btn-preset-select.active');
+      let targetPreset = activeBtn ? activeBtn.dataset.preset : 'who_standard';
+      if (targetPreset === 'custom') targetPreset = 'who_standard';
+
+      if (confirm('คุณต้องการรีเซ็ตคำสั่ง Prompt กลับเป็นค่าเริ่มต้นมาตรฐานตามเทมเพลตหรือไม่?')) {
+        const result = window.IraPrompts.resetPromptToDefault(targetPreset);
+        if (customPromptEl) {
+          customPromptEl.value = result.systemPrompt;
+          if (charCountEl) charCountEl.textContent = `${result.systemPrompt.length} ตัวอักษร`;
+        }
+        if (customDirectivesEl) {
+          customDirectivesEl.value = result.directives || '';
+        }
+        document.querySelectorAll('.btn-preset-select').forEach(b => {
+          b.classList.toggle('active', b.dataset.preset === result.presetId);
+        });
+        showToast('คืนค่า Prompt เป็นค่าเริ่มต้นมาตรฐานเรียบร้อยแล้ว', 'success');
+      }
+    });
+  }
+
+  // แท็กตัวแปรสำหรับคลิกเพื่อแทรกลงใน System Prompt
+  document.querySelectorAll('.prompt-var-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const tagText = tag.dataset.tag;
+      if (!tagText || !customPromptEl) return;
+
+      const start = customPromptEl.selectionStart || customPromptEl.value.length;
+      const end = customPromptEl.selectionEnd || customPromptEl.value.length;
+      const original = customPromptEl.value;
+      customPromptEl.value = original.substring(0, start) + ' ' + tagText + ' ' + original.substring(end);
+      customPromptEl.focus();
+      customPromptEl.selectionStart = customPromptEl.selectionEnd = start + tagText.length + 2;
+      if (charCountEl) charCountEl.textContent = `${customPromptEl.value.length} ตัวอักษร`;
+      showToast(`แทรกตัวแปร ${tagText} แล้ว`, 'info');
+    });
+  });
+
+  // บันทึกการตั้งค่าทั้งหมด
   if (btnSave) {
     btnSave.addEventListener('click', () => {
       const newApiKey = (inputApiKey ? inputApiKey.value : '').trim();
@@ -1276,9 +1425,20 @@ function setupSettingsModal() {
       localStorage.setItem('ira_typhoon_model', newModel);
       localStorage.setItem('ira_google_sheets_url', newSheetsUrl);
 
+      // บันทึก Prompt Settings
+      const newSystemPrompt = customPromptEl ? customPromptEl.value : '';
+      const newDirectives = customDirectivesEl ? customDirectivesEl.value : '';
+      const activeBtn = document.querySelector('.btn-preset-select.active');
+      const activePresetId = activeBtn ? activeBtn.dataset.preset : 'who_standard';
+
+      window.IraPrompts.saveCustomPrompt(newSystemPrompt, newDirectives, activePresetId);
+      state.settings.customSystemPrompt = newSystemPrompt;
+      state.settings.customDirectives = newDirectives;
+      state.settings.promptPreset = activePresetId;
+
       window.closeSettingsModal();
       updateGoogleSheetsStatusUI();
-      showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว!', 'success');
+      showToast('บันทึกการตั้งค่าและเทมเพลต Prompt เรียบร้อยแล้ว!', 'success');
 
       if (newSheetsUrl) {
         window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers());
