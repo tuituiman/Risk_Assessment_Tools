@@ -150,8 +150,8 @@
                 <input type="radio" name="q1_highThreat" value="yes">
                 <span class="opt-text">ใช่ (Yes) ➔ ข้ามไปข้อ 5.1 ทันที</span>
               </label>
-              <label class="opt-card selected" id="opt_q1_no">
-                <input type="radio" name="q1_highThreat" value="no" checked>
+              <label class="opt-card" id="opt_q1_no">
+                <input type="radio" name="q1_highThreat" value="no">
                 <span class="opt-text">ไม่ใช่ / ไม่แน่ชัด (No/Unk)</span>
               </label>
             </div>
@@ -177,12 +177,12 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_1">
                     <label class="sub-choice-label" id="lbl_sub_d1_1_yes"><input type="radio" name="sub_d1_1"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d1_1_no"><input type="radio" name="sub_d1_1"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_1_no"><input type="radio" name="sub_d1_1"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d1_1" class="sub-criterion-input"
-                  placeholder="ทดบันทึกเพิ่มเติม เช่น ตรวจพบสายพันธุ์, ผลตรวจยืนยันทาง Lab...">
+                <textarea id="note_d1_1" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึกเพิ่มเติม เช่น ตรวจพบสายพันธุ์, ผลตรวจยืนยันทาง Lab..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -191,12 +191,12 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_2">
                     <label class="sub-choice-label" id="lbl_sub_d1_2_yes"><input type="radio" name="sub_d1_2"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d1_2_no"><input type="radio" name="sub_d1_2"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_2_no"><input type="radio" name="sub_d1_2"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d1_2" class="sub-criterion-input"
-                  placeholder="ทดบันทึกเพิ่มเติม เช่น สงสัยเชื้อสายพันธุ์ใหม่...">
+                <textarea id="note_d1_2" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึกเพิ่มเติม เช่น สงสัยเชื้อสายพันธุ์ใหม่..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -205,11 +205,11 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_3">
                     <label class="sub-choice-label" id="lbl_sub_d1_3_yes"><input type="radio" name="sub_d1_3"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d1_3_no"><input type="radio" name="sub_d1_3"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_3_no"><input type="radio" name="sub_d1_3"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d1_3" class="sub-criterion-input" placeholder="ทดบันทึกเพิ่มเติม...">
+                <textarea id="note_d1_3" class="sub-criterion-input" rows="1" placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -219,11 +219,11 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_4">
                     <label class="sub-choice-label" id="lbl_sub_d1_4_yes"><input type="radio" name="sub_d1_4"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d1_4_no"><input type="radio" name="sub_d1_4"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_4_no"><input type="radio" name="sub_d1_4"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d1_4" class="sub-criterion-input" placeholder="ทดบันทึกเพิ่มเติม...">
+                <textarea id="note_d1_4" class="sub-criterion-input" rows="1" placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
               </div>
             </div>
 
@@ -258,8 +258,8 @@
             </div>
 
             <div class="option-group">
-              <label class="opt-card selected" id="opt_q2_yes">
-                <input type="radio" name="q2_exposure" value="yes" checked>
+              <label class="opt-card" id="opt_q2_yes">
+                <input type="radio" name="q2_exposure" value="yes">
                 <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk) ➔ นำสู่ข้อ 3</span>
               </label>
               <label class="opt-card" id="opt_q2_no">
@@ -286,14 +286,14 @@
                   <span class="sub-criterion-title"><strong>A.</strong>
                     เชื้อก่อโรคหรือต้นตอภัยยังคงมีอยู่ในพื้นที่</span>
                   <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_a">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_a_yes"><input type="radio" name="sub_d2_a"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_a_yes"><input type="radio" name="sub_d2_a"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d2_a_no"><input type="radio" name="sub_d2_a" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d2_a" class="sub-criterion-input"
-                  placeholder="ทดบันทึก A เช่น ตลาดสดยังไม่ปิด, แหล่งน้ำยังปนเปื้อน...">
+                <textarea id="note_d2_a" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก A เช่น ตลาดสดยังไม่ปิด, แหล่งน้ำยังปนเปื้อน..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -301,14 +301,14 @@
                   <span class="sub-criterion-title"><strong>B.</strong> ประชาชนยังสัมผัสผ่านคน/สัตว์แพร่เชื้อ,
                     แหล่งน้ำ/อาหาร, พาหะ หรือสิ่งแวดล้อม</span>
                   <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_b">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_b_yes"><input type="radio" name="sub_d2_b"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_b_yes"><input type="radio" name="sub_d2_b"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d2_b_no"><input type="radio" name="sub_d2_b" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d2_b" class="sub-criterion-input"
-                  placeholder="ทดบันทึก B เช่น สัมผัสสัตว์ป่า, นั่งเครื่องบินร่วมกับผู้ป่วย...">
+                <textarea id="note_d2_b" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก B เช่น สัมผัสสัตว์ป่า, นั่งเครื่องบินร่วมกับผู้ป่วย..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -316,14 +316,14 @@
                   <span class="sub-criterion-title"><strong>C.</strong> ประชาชนสามารถป่วย/แพร่เชื้อต่อได้
                     (ไม่มีภูมิคุ้มกัน หรือสัมผัสสารเข้มข้น)</span>
                   <div class="sub-choice-group" data-domain="q2" data-id="sub_d2_c">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d2_c_yes"><input type="radio" name="sub_d2_c"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d2_c_yes"><input type="radio" name="sub_d2_c"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d2_c_no"><input type="radio" name="sub_d2_c" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d2_c" class="sub-criterion-input"
-                  placeholder="ทดบันทึก C เช่น อัตราการฉีดวัคซีนต่ำ, เป็นเชื้อกลุ่มใหม่ที่ยังไม่มีภูมิคุ้มกัน...">
+                <textarea id="note_d2_c" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก C เช่น อัตราการฉีดวัคซีนต่ำ, เป็นเชื้อกลุ่มใหม่ที่ยังไม่มีภูมิคุ้มกัน..."></textarea>
               </div>
             </div>
 
@@ -357,8 +357,8 @@
             </div>
 
             <div class="option-group">
-              <label class="opt-card selected" id="opt_q3_yes">
-                <input type="radio" name="q3_severity" value="yes" checked>
+              <label class="opt-card" id="opt_q3_yes">
+                <input type="radio" name="q3_severity" value="yes">
                 <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk)</span>
               </label>
               <label class="opt-card" id="opt_q3_no">
@@ -381,12 +381,12 @@
                   <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_a">
                     <label class="sub-choice-label" id="lbl_sub_d3_a_yes"><input type="radio" name="sub_d3_a"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d3_a_no"><input type="radio" name="sub_d3_a"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_a_no"><input type="radio" name="sub_d3_a"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d3_a" class="sub-criterion-input"
-                  placeholder="ทดบันทึก A เช่น อัตราป่วยตายประมาณ 2-3%...">
+                <textarea id="note_d3_a" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก A เช่น อัตราป่วยตายประมาณ 2-3%..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -394,14 +394,14 @@
                   <span class="sub-criterion-title"><strong>B.</strong> มีสัดส่วนผู้ป่วยภาวะวิกฤต (ICU) สูง
                     หรือเกิดภาวะแทรกซ้อนรุนแรง/ระยะยาว</span>
                   <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_b">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d3_b_yes"><input type="radio" name="sub_d3_b"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_b_yes"><input type="radio" name="sub_d3_b"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d3_b_no"><input type="radio" name="sub_d3_b" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d3_b" class="sub-criterion-input"
-                  placeholder="ทดบันทึก B เช่น มีผู้ป่วยปอดอักเสบขั้นรุนแรง 7 ราย (26%)...">
+                <textarea id="note_d3_b" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก B เช่น มีผู้ป่วยปอดอักเสบขั้นรุนแรง 7 ราย (26%)..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -411,12 +411,12 @@
                   <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_c">
                     <label class="sub-choice-label" id="lbl_sub_d3_c_yes"><input type="radio" name="sub_d3_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d3_c_no"><input type="radio" name="sub_d3_c"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_c_no"><input type="radio" name="sub_d3_c"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d3_c" class="sub-criterion-input"
-                  placeholder="ทดบันทึก C เช่น สูงกว่าค่าเฉลี่ยปกติในฤดูกาลเดียวกัน...">
+                <textarea id="note_d3_c" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก C เช่น สูงกว่าค่าเฉลี่ยปกติในฤดูกาลเดียวกัน..."></textarea>
               </div>
             </div>
 
@@ -451,8 +451,8 @@
             </div>
 
             <div class="option-group">
-              <label class="opt-card selected" id="opt_q4_yes">
-                <input type="radio" name="q4_spread" value="yes" checked>
+              <label class="opt-card" id="opt_q4_yes">
+                <input type="radio" name="q4_spread" value="yes">
                 <span class="opt-text">ใช่ / ไม่แน่ชัด (Yes/Unk)</span>
               </label>
               <label class="opt-card" id="opt_q4_no">
@@ -473,14 +473,14 @@
                   <span class="sub-criterion-title"><strong>A.</strong> เชื้อติดต่อสูง +
                     มีโอกาสสัมผัสบ่อย/รวมกลุ่มทำกิจกรรมร่วมกัน (Social mixing)</span>
                   <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_a">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d4_a_yes"><input type="radio" name="sub_d4_a"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_a_yes"><input type="radio" name="sub_d4_a"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d4_a_no"><input type="radio" name="sub_d4_a" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d4_a" class="sub-criterion-input"
-                  placeholder="ทดบันทึก A เช่น มีเที่ยวบินตรงหลายเที่ยวต่อวัน, แหล่งชุมชนหนาแน่น...">
+                <textarea id="note_d4_a" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก A เช่น มีเที่ยวบินตรงหลายเที่ยวต่อวัน, แหล่งชุมชนหนาแน่น..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -488,14 +488,14 @@
                   <span class="sub-criterion-title"><strong>B.</strong> มีอัตราป่วย (Attack rate) สูง
                     ผู้ป่วยรายใหม่เพิ่มขึ้นอย่างรวดเร็ว</span>
                   <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_b">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d4_b_yes"><input type="radio" name="sub_d4_b"
-                        value="yes" checked> ใช่ (Yes)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_b_yes"><input type="radio" name="sub_d4_b"
+                        value="yes"> ใช่ (Yes)</label>
                     <label class="sub-choice-label" id="lbl_sub_d4_b_no"><input type="radio" name="sub_d4_b" value="no">
                       ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d4_b" class="sub-criterion-input"
-                  placeholder="ทดบันทึก B เช่น ผู้ป่วยเพิ่มขึ้นจาก 27 เป็น 44 รายใน 3 วัน...">
+                <textarea id="note_d4_b" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก B เช่น ผู้ป่วยเพิ่มขึ้นจาก 27 เป็น 44 รายใน 3 วัน..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -505,12 +505,12 @@
                   <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_c">
                     <label class="sub-choice-label" id="lbl_sub_d4_c_yes"><input type="radio" name="sub_d4_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d4_c_no"><input type="radio" name="sub_d4_c"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_c_no"><input type="radio" name="sub_d4_c"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d4_c" class="sub-criterion-input"
-                  placeholder="ทดบันทึก C เช่น คลัสเตอร์ผู้ป่วยระบาดเป็นกลุ่มก้อน...">
+                <textarea id="note_d4_c" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก C เช่น คลัสเตอร์ผู้ป่วยระบาดเป็นกลุ่มก้อน..."></textarea>
               </div>
             </div>
 
@@ -541,8 +541,8 @@
                 <input type="radio" name="q4_2_significant" value="yes">
                 <span class="opt-text">ใช่ (Yes - ได้รับผลกระทบมาก) ➔ นำสู่ข้อ 5.1</span>
               </label>
-              <label class="opt-card selected" id="opt_q4_2_no">
-                <input type="radio" name="q4_2_significant" value="no" checked>
+              <label class="opt-card" id="opt_q4_2_no">
+                <input type="radio" name="q4_2_significant" value="no">
                 <span class="opt-text">ไม่ใช่ (No) ➔ สรุปความเสี่ยงต่ำมาก</span>
               </label>
             </div>
@@ -576,8 +576,8 @@
             </div>
 
             <div class="option-group">
-              <label class="opt-card selected" id="opt_q5_2_yes">
-                <input type="radio" name="q5_2_overwhelmed" value="yes" checked>
+              <label class="opt-card" id="opt_q5_2_yes">
+                <input type="radio" name="q5_2_overwhelmed" value="yes">
                 <span class="opt-text">ใช่ มีแนวโน้มจะล่ม (Yes)</span>
               </label>
               <label class="opt-card" id="opt_q5_2_no">
@@ -627,8 +627,8 @@
                 <input type="radio" name="q5_1_capacity" value="yes">
                 <span class="opt-text">มีศักยภาพเพียงพอ (Yes)</span>
               </label>
-              <label class="opt-card selected" id="opt_q5_no">
-                <input type="radio" name="q5_1_capacity" value="no" checked>
+              <label class="opt-card" id="opt_q5_no">
+                <input type="radio" name="q5_1_capacity" value="no">
                 <span class="opt-text">ไม่เพียงพอ / ไม่แน่ชัด (No/Unk)</span>
               </label>
             </div>
@@ -648,12 +648,12 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_a">
                     <label class="sub-choice-label" id="lbl_sub_d5_a_yes"><input type="radio" name="sub_d5_a"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d5_a_no"><input type="radio" name="sub_d5_a"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_a_no"><input type="radio" name="sub_d5_a"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d5_a" class="sub-criterion-input"
-                  placeholder="ทดบันทึก A เช่น มีแนวทางคัดกรองด่าน, การกักกัน 14 วัน...">
+                <textarea id="note_d5_a" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก A เช่น มีแนวทางคัดกรองด่าน, การกักกัน 14 วัน..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -663,12 +663,12 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_b">
                     <label class="sub-choice-label" id="lbl_sub_d5_b_yes"><input type="radio" name="sub_d5_b"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d5_b_no"><input type="radio" name="sub_d5_b"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_b_no"><input type="radio" name="sub_d5_b"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d5_b" class="sub-criterion-input"
-                  placeholder="ทดบันทึก B เช่น มีห้องแยกความดันลบพร้อม, เวชภัณฑ์สำรอง...">
+                <textarea id="note_d5_b" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก B เช่น มีห้องแยกความดันลบพร้อม, เวชภัณฑ์สำรอง..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -678,12 +678,12 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_c">
                     <label class="sub-choice-label" id="lbl_sub_d5_c_yes"><input type="radio" name="sub_d5_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label active-no" id="lbl_sub_d5_c_no"><input type="radio" name="sub_d5_c"
-                        value="no" checked> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_c_no"><input type="radio" name="sub_d5_c"
+                        value="no"> ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d5_c" class="sub-criterion-input"
-                  placeholder="ทดบันทึก C เช่น ประชาชนสวมหน้ากาก, สื่อสารความเสี่ยงไม่ให้ตระหนก...">
+                <textarea id="note_d5_c" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก C เช่น ประชาชนสวมหน้ากาก, สื่อสารความเสี่ยงไม่ให้ตระหนก..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -691,14 +691,14 @@
                   <span class="sub-criterion-title"><strong>D (อุปสรรคสำคัญ):</strong> มีความเปราะบาง/อุปสรรควิกฤต เช่น
                     ขาดแคลนทรัพยากร, การตีตรา, หรือความไม่สงบ</span>
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_d">
-                    <label class="sub-choice-label active-yes" id="lbl_sub_d5_d_yes"><input type="radio" name="sub_d5_d"
-                        value="yes" checked> ใช่ (มีอุปสรรค)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_d_yes"><input type="radio" name="sub_d5_d"
+                        value="yes"> ใช่ (มีอุปสรรค)</label>
                     <label class="sub-choice-label" id="lbl_sub_d5_d_no"><input type="radio" name="sub_d5_d" value="no">
                       ไม่ใช่ (ไม่มี)</label>
                   </div>
                 </div>
-                <input type="text" id="note_d5_d" class="sub-criterion-input"
-                  placeholder="ทดบันทึก D เช่น ห้องแยกกักและบุคลากรที่ด่านตรวจคนเข้าเมืองอาจไม่เพียงพอ...">
+                <textarea id="note_d5_d" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึก D เช่น ห้องแยกกักและบุคลากรที่ด่านตรวจคนเข้าเมืองอาจไม่เพียงพอ..."></textarea>
               </div>
             </div>
 

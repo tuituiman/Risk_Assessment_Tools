@@ -51,6 +51,7 @@ const state = {
   domainNotes: {
     d1: '', d2: '', d3: '', d4: '', d4_2: '', d5: '', d5_2: ''
   },
+  notes: {}, // บันทึกย่อยของแต่ละเกณฑ์ (note_d1_1, note_d1_2, ...)
   // ผลการประเมินความเสี่ยง (เริ่มต้นเป็น Incomplete เพื่อไม่ให้ขึ้น Very High ก่อนตอบ)
   assessmentResult: {
     level: 'Incomplete',
@@ -188,39 +189,40 @@ function compileUserNotes() {
     notesList.push(`[ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]: ${state.metadata.riskQuestion.trim()}`);
   }
 
-  // 2. ข้อย่อยเกณฑ์ประกอบ
-  const subCriteriaDefs = [
-    { key: 'd1_vhf', label: 'สงสัยไข้เลือดออกฟิโลไวรัส/อีโบลา/มาร์บวร์ก' },
-    { key: 'd1_respiratory', label: 'สงสัยไวรัสทางเดินหายใจเฉียบพลันรุนแรง (SARS/MERS/Novel Flu)' },
-    { key: 'd1_neuro', label: 'สงสัยไข้สมองอักเสบกลุ่มอาการเฉียบพลัน' },
-    { key: 'd1_other', label: 'สงสัยโรคติดต่ออุบัติใหม่อื่นๆ ตามนิยาม WHO IHR' },
-    { key: 'd2_close_contact', label: 'พบการสัมผัสใกล้ชิดในครัวเรือน/สถานที่ปิด' },
-    { key: 'd2_healthcare', label: 'พบการติดเชื้อในบุคลากรทางการแพทย์' },
-    { key: 'd2_animal', label: 'มีประวัติสัมผัสสัตว์นำโรค/แหล่งเพาะเชื้อชัดเจน' },
-    { key: 'd2_lab', label: 'มีอุบัติเหตุสัมผัสเชื้อในห้องปฏิบัติการ' },
-    { key: 'd3_icu', label: 'มีผู้ป่วยอาการวิกฤตต้องใช้เครื่องช่วยหายใจ/ICU' },
-    { key: 'd3_cfr_high', label: 'อัตราการเสียชีวิต (CFR) สูงกว่าปกติของโรคทั่วไป' },
-    { key: 'd3_vulnerable', label: 'พบการระบาดในกลุ่มเปราะบาง (เด็กเล็ก/ผู้สูงอายุ/ผู้มีโรคประจำตัว)' },
-    { key: 'd3_organ_failure', label: 'พบภาวะอวัยวะล้มเหลวหลายระบบ (Multi-organ Failure)' },
-    { key: 'd4_r0_high', label: 'ค่า R0 เบื้องต้นสูง มีแนวโน้มการแพร่กระจายเร็ว' },
-    { key: 'd4_travel', label: 'พบประวัติการเดินทางเชื่อมโยงหลายพื้นที่/ต่างประเทศ' },
-    { key: 'd4_dense_pop', label: 'เกิดเหตุการณ์ในพื้นที่ชุมชนแออัด/ตลาด/เรือนจำ' },
-    { key: 'd4_superspread', label: 'มีเหตุการณ์ Superspreading event' },
-    { key: 'd5_ppe', label: 'ขาดแคลนอุปกรณ์ป้องกันส่วนบุคคล (PPE) ในพื้นที่' },
-    { key: 'd5_isolation', label: 'เตียงแยกโรค (Isolation Room) ไม่เพียงพอ' },
-    { key: 'd5_medicines', label: 'เวชภัณฑ์ ยาต้านไวรัส หรือวัคซีนไม่เพียงพอ' },
-    { key: 'd5_guidelines', label: 'ขาดแนวทางปฏิบัติ (SOP) ในระดับพื้นที่' }
+  // 2. ข้อย่อยและบันทึกย่อยในแต่ละโมดูล (Sub-criteria & Notes)
+  const subItems = [
+    { id: 'sub_d1_1', noteId: 'note_d1_1', domain: 'd1', label: '1.1 โรคติดต่ออันตราย 13 โรค' },
+    { id: 'sub_d1_2', noteId: 'note_d1_2', domain: 'd1', label: '1.2 ไวรัสโคโรนาสายพันธุ์ใหม่ (SARS/MERS)' },
+    { id: 'sub_d1_3', noteId: 'note_d1_3', domain: 'd1', label: '1.3 ไข้หวัดใหญ่สายพันธุ์ใหม่' },
+    { id: 'sub_d1_4', noteId: 'note_d1_4', domain: 'd1', label: '1.4 โปลิโอธรรมชาติ/RVF/แอนแทรกซ์' },
+    { id: 'sub_d2_a', noteId: 'note_d2_a', domain: 'd2', label: '2A ต้นตอโรคยังคงมีอยู่ในพื้นที่' },
+    { id: 'sub_d2_b', noteId: 'note_d2_b', domain: 'd2', label: '2B ประชาชนยังสัมผัสต่อเนื่อง' },
+    { id: 'sub_d2_c', noteId: 'note_d2_c', domain: 'd2', label: '2C ประชากรยังไม่มีภูมิคุ้มกัน' },
+    { id: 'sub_d3_a', noteId: 'note_d3_a', domain: 'd3', label: '3A อัตราป่วยตาย (CFR) ปานกลางถึงสูง' },
+    { id: 'sub_d3_b', noteId: 'note_d3_b', domain: 'd3', label: '3B สัดส่วนผู้ป่วยวิกฤต/ICU สูง' },
+    { id: 'sub_d3_c', noteId: 'note_d3_c', domain: 'd3', label: '3C อัตราป่วย/ตายสูงกว่าอดีต' },
+    { id: 'sub_d4_a', noteId: 'note_d4_a', domain: 'd4', label: '4.1A เชื้อติดต่อสูง/รวมกลุ่มเดินทาง' },
+    { id: 'sub_d4_b', noteId: 'note_d4_b', domain: 'd4', label: '4.1B อัตราป่วย Attack rate พุ่งเร็ว' },
+    { id: 'sub_d4_c', noteId: 'note_d4_c', domain: 'd4', label: '4.1C รายงานผู้ป่วยมากในเวลาสั้น' },
+    { id: 'sub_d5_a', noteId: 'note_d5_a', domain: 'd5', label: '5.1A มาตรการสาธารณสุขพร้อม' },
+    { id: 'sub_d5_b', noteId: 'note_d5_b', domain: 'd5', label: '5.1B ระบบเตียง/ยา/บุคลากรเพียงพอ' },
+    { id: 'sub_d5_c', noteId: 'note_d5_c', domain: 'd5', label: '5.1C สื่อสารความเสี่ยงมีประสิทธิผล' },
+    { id: 'sub_d5_d', noteId: 'note_d5_d', domain: 'd5_d', label: '5.1D ความเปราะบาง/อุปสรรคสำคัญ' }
   ];
 
-  const activeSub = [];
-  subCriteriaDefs.forEach(item => {
-    if (state.subCriteria[item.key]) {
-      activeSub.push(`- ${item.label}`);
+  const validSubNotes = [];
+  subItems.forEach(item => {
+    const val = state.subAnswers[item.id];
+    const noteEl = document.getElementById(item.noteId);
+    const noteText = (noteEl ? noteEl.value.trim() : (state.notes[item.noteId] || '')).trim();
+    if (val === 'yes' || noteText) {
+      const statusTh = val === 'yes' ? 'ใช่ (Yes)' : (val === 'no' ? 'ไม่ใช่ (No)' : 'ยังไม่ระบุ');
+      validSubNotes.push(`- ${item.label}: สถานะ=${statusTh}${noteText ? ` [บันทึก: ${noteText}]` : ''}`);
     }
   });
 
-  if (activeSub.length > 0) {
-    notesList.push(`[เกณฑ์ประกอบเชิงลึก]:\n` + activeSub.join('\n'));
+  if (validSubNotes.length > 0) {
+    notesList.push(`[ข้อมูลสนับสนุนและบันทึกข้อย่อย]:\n` + validSubNotes.join('\n'));
   }
 
   // 3. บันทึกย่อตามรายมิติ
@@ -521,11 +523,20 @@ window.loadAuditRecordToForm = function (id) {
   });
 
   // 3. ฟื้นฟูข้อย่อย (Sub-criteria)
-  if (item.subCriteria) {
-    Object.assign(state.subCriteria, item.subCriteria);
-    Object.keys(state.subCriteria).forEach(key => {
-      const chk = document.querySelector(`input[data-sub="${key}"]`);
-      if (chk) chk.checked = !!state.subCriteria[key];
+  if (item.subAnswers) {
+    Object.assign(state.subAnswers, item.subAnswers);
+    Object.keys(state.subAnswers).forEach(key => {
+      const val = state.subAnswers[key];
+      if (val) window.setSubChoiceVal(key, val);
+    });
+  }
+
+  // ฟื้นฟูบันทึกข้อย่อย (Sub-criterion input notes)
+  if (item.notes) {
+    Object.assign(state.notes, item.notes);
+    Object.keys(state.notes).forEach(k => {
+      const el = document.getElementById(k);
+      if (el) el.value = state.notes[k];
     });
   }
 
@@ -592,9 +603,87 @@ function closeDeleteModal() {
 }
 
 /**
+ * สลับการแสดงผล Drawer ข้อย่อย (Sub-criteria Drawer)
+ */
+window.toggleSubDrawer = function (drawerId, btnEl) {
+  const el = document.getElementById(drawerId);
+  if (!el) return;
+
+  if (!btnEl && window.event && window.event.currentTarget) {
+    btnEl = window.event.currentTarget;
+  }
+  if (!btnEl) {
+    btnEl = document.querySelector(`[onclick*="${drawerId}"]`);
+  }
+
+  const isHidden = window.getComputedStyle(el).display === 'none' || el.style.display === 'none' || !el.classList.contains('open');
+
+  if (isHidden) {
+    el.style.display = 'flex';
+    el.classList.add('open');
+  } else {
+    el.style.display = 'none';
+    el.classList.remove('open');
+  }
+
+  if (btnEl) {
+    const textSpan = btnEl.querySelector('.drawer-btn-label');
+    const chevronSpan = btnEl.querySelector('.drawer-chevron');
+    if (isHidden) {
+      btnEl.classList.add('active');
+      if (chevronSpan) chevronSpan.textContent = '▲';
+      if (textSpan && textSpan.getAttribute('data-collapse-text')) {
+        textSpan.textContent = textSpan.getAttribute('data-collapse-text');
+      }
+    } else {
+      btnEl.classList.remove('active');
+      if (chevronSpan) chevronSpan.textContent = '▼';
+      if (textSpan && textSpan.getAttribute('data-expand-text')) {
+        textSpan.textContent = textSpan.getAttribute('data-expand-text');
+      }
+    }
+  }
+};
+
+/**
+ * กำหนดค่าและอัปเดตสถานะของข้อย่อย Segmented Choice
+ */
+window.setSubChoiceVal = function (subId, val) {
+  state.subAnswers[subId] = val;
+  const radio = document.querySelector(`input[name="${subId}"][value="${val}"]`);
+  if (radio) {
+    radio.checked = true;
+    const container = radio.closest('.sub-choice-group');
+    if (container) {
+      container.querySelectorAll('.sub-choice-label').forEach(lbl => {
+        lbl.classList.remove('active-yes', 'active-no');
+      });
+      const chosenLabel = radio.closest('.sub-choice-label');
+      if (chosenLabel) {
+        chosenLabel.classList.add(val === 'yes' ? 'active-yes' : 'active-no');
+      }
+    }
+  }
+};
+
+/**
  * ตั้งค่า Option Cards (ตัวเลือกคำตอบหลัก)
  */
 function setupOptionCards() {
+  // ล้างการเลือกเริ่มต้น (ให้แน่ใจว่าไม่มีข้อใดถูก check อัตโนมัติเมื่อเปิดใหม่)
+  document.querySelectorAll('.opt-card input[type="radio"]').forEach(inp => {
+    inp.checked = false;
+  });
+  document.querySelectorAll('.opt-card').forEach(card => {
+    card.classList.remove('selected', 'danger-selected');
+  });
+  document.querySelectorAll('.sub-choice-group input[type="radio"]').forEach(inp => {
+    inp.checked = false;
+  });
+  document.querySelectorAll('.sub-choice-label').forEach(lbl => {
+    lbl.classList.remove('active-yes', 'active-no');
+  });
+
   document.querySelectorAll('.opt-card').forEach(card => {
     card.addEventListener('click', (e) => {
       const input = card.querySelector('input[type="radio"]');
@@ -681,36 +770,13 @@ function setupOptionCards() {
 }
 
 /**
- * ควบคุม Drawer ข้อย่อย (Sub-criteria)
+ * ควบคุม Drawer ข้อย่อย (Sub-criteria) และ Input บันทึกย่อย
  */
 function setupSubCriteriaDrawers() {
-  document.querySelectorAll('.btn-subdrawer-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-target');
-      const drawer = document.getElementById(targetId);
-      if (!drawer) return;
-
-      const isOpen = drawer.classList.contains('open');
-      const chevron = btn.querySelector('.drawer-chevron');
-
-      if (isOpen) {
-        drawer.classList.remove('open');
-        btn.classList.remove('active');
-        if (chevron) chevron.textContent = '▼';
-      } else {
-        drawer.classList.add('open');
-        btn.classList.add('active');
-        if (chevron) chevron.textContent = '▲';
-      }
-    });
-  });
-
-  document.querySelectorAll('.sub-criterion-checkbox').forEach(chk => {
-    chk.addEventListener('change', () => {
-      const subKey = chk.getAttribute('data-sub');
-      if (subKey) {
-        state.subCriteria[subKey] = chk.checked;
-      }
+  // บันทึกข้อความลงใน state.notes เมื่อมีการพิมพ์ใน .sub-criterion-input
+  document.querySelectorAll('.sub-criterion-input').forEach(inp => {
+    inp.addEventListener('input', (e) => {
+      state.notes[e.target.id] = e.target.value;
     });
   });
 }
@@ -864,9 +930,39 @@ function loadPresetWuhanOutbreak() {
   state.answers.q5_1_capacitySufficient = 'no';
   state.answers.q5_2_systemOverwhelmed = 'yes';
 
-  // ซิงก์ Radio
+  // ซิงก์ Radio ข้อหลัก
   window.IraEngine.setMainQuestionRadio('q1_highThreat', 'yes', state);
   window.IraEngine.setMainQuestionRadio('q5_1_capacity', 'no', state);
+
+  // ตั้งค่าข้อย่อยสำหรับเคสอู่ฮั่น
+  window.setSubChoiceVal('sub_d1_1', 'no');
+  window.setSubChoiceVal('sub_d1_2', 'yes'); // Novel coronavirus
+  window.setSubChoiceVal('sub_d1_3', 'no');
+  window.setSubChoiceVal('sub_d1_4', 'no');
+  window.setSubChoiceVal('sub_d2_a', 'yes');
+  window.setSubChoiceVal('sub_d2_b', 'yes');
+  window.setSubChoiceVal('sub_d2_c', 'yes');
+  window.setSubChoiceVal('sub_d3_a', 'no');
+  window.setSubChoiceVal('sub_d3_b', 'yes');
+  window.setSubChoiceVal('sub_d3_c', 'yes');
+  window.setSubChoiceVal('sub_d4_a', 'yes');
+  window.setSubChoiceVal('sub_d4_b', 'yes');
+  window.setSubChoiceVal('sub_d4_c', 'yes');
+  window.setSubChoiceVal('sub_d5_a', 'no');
+  window.setSubChoiceVal('sub_d5_b', 'no');
+  window.setSubChoiceVal('sub_d5_c', 'no');
+  window.setSubChoiceVal('sub_d5_d', 'yes');
+
+  const noteD1_2 = document.getElementById('note_d1_2');
+  if (noteD1_2) {
+    noteD1_2.value = 'ตรวจพบเชื้อไวรัสโคโรนาสายพันธุ์ใหม่ (Novel Coronavirus 2019-nCoV)';
+    state.notes['note_d1_2'] = noteD1_2.value;
+  }
+  const noteD5_d = document.getElementById('note_d5_d');
+  if (noteD5_d) {
+    noteD5_d.value = 'ขาดแคลนชุดตรวจ RT-PCR และเตียง ICU ในระยะเริ่มแรกของการระบาด';
+    state.notes['note_d5_d'] = noteD5_d.value;
+  }
 
   // คำนวณความเสี่ยงและอัปเดตผลลัพธ์
   window.IraEngine.evaluateRiskAlgorithm(state);

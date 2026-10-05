@@ -243,6 +243,7 @@ async function saveToGoogleSheets(state, helpers) {
       answers: state.answers,
       subCriteria: state.subCriteria,
       subAnswers: state.subAnswers,
+      notes: state.notes,
       domainNotes: state.domainNotes,
       clinicalDetails: state.metadata.clinicalDetails,
       riskQuestion: state.metadata.riskQuestion,

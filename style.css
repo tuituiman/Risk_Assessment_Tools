@@ -1669,6 +1669,8 @@ textarea.form-control {
   color: #334155;
   font-family: inherit;
   transition: var(--transition);
+  resize: vertical;
+  min-height: 38px;
 }
 
 .sub-criterion-input:focus {
