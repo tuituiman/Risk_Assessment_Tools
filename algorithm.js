@@ -590,68 +590,73 @@ function updateDomainPill(elId, val) {
 }
 
 /**
- * คำนวณสรุปผลคำถามข้อหลักอัตโนมัติจากเกณฑ์ย่อย (Sub-criteria)
+ * คำนวณสรุปผลคำถามข้อหลักอัตโนมัติจากเกณฑ์ย่อย (Sub-criteria to Main Domain)
+ * รองรับรหัสโดเมนทั้งแบบ 'q1'/'d1', 'q2'/'d2', 'q3'/'d3', 'q4'/'d4', 'q5_1'/'d5'
+ * ตามเกณฑ์มาตรฐาน WHO IRA (Slides 30, 32, 34, 36, 39)
  */
 function calculateDomainFromSubAnswers(domain, state) {
   if (!state || !state.subAnswers) return;
-  const sub = state.subAnswers;
+  const sa = state.subAnswers;
+  const d = String(domain).toLowerCase();
 
-  let triggered = false;
-  let hasAnyAnswer = false;
+  if (d === 'q1' || d === 'd1') {
+    // Slide 30: หากมีข้อใดข้อหนึ่งเข้าข่าย (Yes) -> ถือเป็นภัยคุกคามสูง (Yes); หากตอบ No ครบ -> No
+    const anyYes = ['sub_d1_1', 'sub_d1_2', 'sub_d1_3', 'sub_d1_4'].some(k => sa[k] === 'yes');
+    const allNo = ['sub_d1_1', 'sub_d1_2', 'sub_d1_3', 'sub_d1_4'].every(k => sa[k] === 'no');
+    const hasAny = ['sub_d1_1', 'sub_d1_2', 'sub_d1_3', 'sub_d1_4'].some(k => sa[k] !== null && sa[k] !== undefined);
 
-  if (domain === 'd1') {
-    ['sub_d1_1', 'sub_d1_2', 'sub_d1_3', 'sub_d1_4'].forEach(k => {
-      if (sub[k]) hasAnyAnswer = true;
-      if (sub[k] === 'yes') triggered = true;
-    });
-    if (triggered) {
+    if (anyYes) {
       setMainQuestionRadio('q1_highThreat', 'yes', state);
-    } else if (hasAnyAnswer) {
+    } else if (allNo || hasAny) {
       setMainQuestionRadio('q1_highThreat', 'no', state);
     }
-  } else if (domain === 'd2') {
-    ['sub_d2_a', 'sub_d2_b', 'sub_d2_c'].forEach(k => {
-      if (sub[k]) hasAnyAnswer = true;
-      if (sub[k] === 'yes') triggered = true;
-    });
-    if (triggered) {
+  } else if (d === 'q2' || d === 'd2') {
+    // Slide 32: ต้องเข้าเกณฑ์ครบทั้ง 3 ด้าน (A: ต้นตอ, B: ทางผ่าน, C: ประชากรเสี่ยง) จึงถือว่ายังมีการสัมผัสสมบูรณ์ (Yes)
+    const allYes = sa['sub_d2_a'] === 'yes' && sa['sub_d2_b'] === 'yes' && sa['sub_d2_c'] === 'yes';
+    const anyNo = sa['sub_d2_a'] === 'no' || sa['sub_d2_b'] === 'no' || sa['sub_d2_c'] === 'no';
+
+    if (allYes) {
       setMainQuestionRadio('q2_exposure', 'yes', state);
-    } else if (hasAnyAnswer) {
+    } else if (anyNo) {
       setMainQuestionRadio('q2_exposure', 'no', state);
     }
-  } else if (domain === 'd3') {
-    ['sub_d3_a', 'sub_d3_b', 'sub_d3_c'].forEach(k => {
-      if (sub[k]) hasAnyAnswer = true;
-      if (sub[k] === 'yes') triggered = true;
-    });
-    if (triggered) {
+  } else if (d === 'q3' || d === 'd3') {
+    // Slide 34: เข้าเกณฑ์ A หรือ B หรือ C อย่างน้อย 1 ข้อ -> ถือว่าความรุนแรงสูง (Yes); หากตอบ No ครบ -> No
+    const anyYes = ['sub_d3_a', 'sub_d3_b', 'sub_d3_c'].some(k => sa[k] === 'yes');
+    const allNo = ['sub_d3_a', 'sub_d3_b', 'sub_d3_c'].every(k => sa[k] === 'no');
+    const hasAny = ['sub_d3_a', 'sub_d3_b', 'sub_d3_c'].some(k => sa[k] !== null && sa[k] !== undefined);
+
+    if (anyYes) {
       setMainQuestionRadio('q3_severity', 'yes', state);
-    } else if (hasAnyAnswer) {
+    } else if (allNo || hasAny) {
       setMainQuestionRadio('q3_severity', 'no', state);
     }
-  } else if (domain === 'd4') {
-    ['sub_d4_a', 'sub_d4_b', 'sub_d4_c'].forEach(k => {
-      if (sub[k]) hasAnyAnswer = true;
-      if (sub[k] === 'yes') triggered = true;
-    });
-    if (triggered) {
+  } else if (d === 'q4' || d === 'd4') {
+    // Slide 36: เข้าเกณฑ์ A หรือ B หรือ C อย่างน้อย 1 ข้อ -> ถือว่าแนวโน้มการแพร่กระจายสูง (Yes); หากตอบ No ครบ -> No
+    const anyYes = ['sub_d4_a', 'sub_d4_b', 'sub_d4_c'].some(k => sa[k] === 'yes');
+    const allNo = ['sub_d4_a', 'sub_d4_b', 'sub_d4_c'].every(k => sa[k] === 'no');
+    const hasAny = ['sub_d4_a', 'sub_d4_b', 'sub_d4_c'].some(k => sa[k] !== null && sa[k] !== undefined);
+
+    if (anyYes) {
       setMainQuestionRadio('q4_spread', 'yes', state);
-    } else if (hasAnyAnswer) {
+    } else if (allNo || hasAny) {
       setMainQuestionRadio('q4_spread', 'no', state);
     }
-  } else if (domain === 'd5') {
-    let sufficientCount = 0;
-    let answeredCount = 0;
-    ['sub_d5_a', 'sub_d5_b', 'sub_d5_c', 'sub_d5_d'].forEach(k => {
-      if (sub[k]) {
-        answeredCount++;
-        if (sub[k] === 'yes') sufficientCount++;
+  } else if (d === 'q5_1' || d === 'd5' || d === 'q5') {
+    // Slide 39: ศักยภาพด้าน A, B, C ต้องพร้อม (Yes) และต้อง "ไม่มีอุปสรรคสำคัญ (D = No)" จึงถือว่าเพียงพอ (Yes)
+    const capacitiesMet = sa['sub_d5_a'] === 'yes' && sa['sub_d5_b'] === 'yes' && sa['sub_d5_c'] === 'yes';
+    const noObstacle = sa['sub_d5_d'] === 'no';
+    const hasObstacle = sa['sub_d5_d'] === 'yes';
+    const anyNoCapacity = sa['sub_d5_a'] === 'no' || sa['sub_d5_b'] === 'no' || sa['sub_d5_c'] === 'no';
+
+    if (capacitiesMet && noObstacle) {
+      setMainQuestionRadio('q5_1_capacity', 'yes', state);
+    } else if (anyNoCapacity || hasObstacle) {
+      setMainQuestionRadio('q5_1_capacity', 'no', state);
+      // หากพบอุปสรรควิกฤต (D = Yes) ให้เสนอแนะหรือตั้งค่าระบบบริการสุขภาพมีแนวโน้มล่ม (Q5.2 = Yes)
+      if (hasObstacle) {
+        setMainQuestionRadio('q5_2_overwhelmed', 'yes', state);
       }
-    });
-    if (answeredCount > 0) {
-      // เกณฑ์ศักยภาพเพียงพอ: ต้องตอบ 'yes' ตั้งแต่ 3 ใน 4 ข้อขึ้นไป
-      const isSufficient = sufficientCount >= 3;
-      setMainQuestionRadio('q5_1_capacity', isSufficient ? 'yes' : 'no', state);
     }
   }
 }

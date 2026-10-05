@@ -180,16 +180,49 @@ function updateGoogleSheetsStatusUI() {
 
 /**
  * รวบรวมบันทึกข้อความและข้อย่อยทั้งหมดเพื่อส่งให้ AI และบันทึก
+ * มีระบบกรองข้อขัดแย้ง (Conflict Resolution) เพื่อให้สอดคล้องกับการตัดสินใจข้อหลักของผู้ประเมิน 100%
  */
 function compileUserNotes() {
   const notesList = [];
+  const ans = state.answers;
 
-  // 1. ประเด็นที่ต้องการประเมิน
+  // 1. ประเด็นที่ต้องการประเมินความเสี่ยง (Risk Question / Focal Issue)
   if (state.metadata.riskQuestion && state.metadata.riskQuestion.trim()) {
-    notesList.push(`[ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]: ${state.metadata.riskQuestion.trim()}`);
+    notesList.push(`[🎯 ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]:\n${state.metadata.riskQuestion.trim()}`);
   }
 
-  // 2. ข้อย่อยและบันทึกย่อยในแต่ละโมดูล (Sub-criteria & Notes)
+  // 2. ข้อยุติของข้อหลักทั้ง 5 มิติ (User Decision / Source of Truth)
+  const d1Verdict = ans.q1_highThreat === 'yes' ? 'ใช่ - เป็นเชื้อหรือภัยคุกคามระดับสูงที่กำหนด' : (ans.q1_highThreat === 'no' ? 'ไม่ใช่/ไม่แน่ชัด - ไม่จัดเป็นเชื้อคุกคามระดับสูงเบื้องต้น' : 'ยังไม่ระบุ');
+  const d2Verdict = ans.q2_exposureActive === 'yes' ? 'ใช่ - ประชาชนยังมีแนวโน้มการสัมผัสต่อเนื่อง' : (ans.q2_exposureActive === 'no' ? 'ไม่ใช่ - ยุติการสัมผัสแล้วหรือไม่มีแนวโน้มสัมผัสต่อเนื่อง' : 'ยังไม่ระบุ');
+  const d3Verdict = ans.q3_severityHigh === 'yes' ? 'ใช่ - มีความรุนแรงทางคลินิกสูง (CFR/วิกฤต/ICU)' : (ans.q3_severityHigh === 'no' ? 'ไม่ใช่ - ความรุนแรงทางคลินิกปานกลางถึงต่ำ' : 'ยังไม่ระบุ');
+  const d4Verdict = ans.q4_spreadFuture === 'yes' ? 'ใช่ - มีแนวโน้มการแพร่ระบาดขยายวงกว้างสูง' : (ans.q4_spreadFuture === 'no' ? 'ไม่ใช่ - แนวโน้มการแพร่กระจายต่ำ/อยู่ในขอบเขตจำกัด' : 'ยังไม่ระบุ');
+  const d5Verdict = ans.q5_1_capacitySufficient === 'yes' ? 'ใช่ - ศักยภาพและทรัพยากรในพื้นที่เพียงพอ' : (ans.q5_1_capacitySufficient === 'no' ? 'ไม่ใช่ - ศักยภาพยังไม่เพียงพอต่อการควบคุม' : 'ยังไม่ระบุ');
+  const d52Verdict = ans.q5_2_systemOverwhelmed === 'yes' ? 'ใช่ - ระบบบริการสุขภาพมีแนวโน้มล่ม (Overwhelmed)' : (ans.q5_2_systemOverwhelmed === 'no' ? 'ไม่ใช่ - ระบบบริการสุขภาพยังคงรองรับได้' : 'ยังไม่ระบุ');
+
+  const mainSummaryLines = [
+    `[ข้อสรุปการประเมินข้อหลักทั้ง 5 ข้อ (ยึดตามข้อหลักที่ผู้ประเมินตัดสินใจเป็นข้อยุติสูงสุด)]:`,
+    `- ข้อ 1 (ภัยคุกคามระดับสูง): ${d1Verdict}`
+  ];
+
+  if (ans.q1_highThreat !== 'yes') {
+    mainSummaryLines.push(`- ข้อ 2 (การสัมผัส): ${d2Verdict}`);
+    if (ans.q2_exposureActive === 'yes') {
+      mainSummaryLines.push(`- ข้อ 3 (ความรุนแรงทางคลินิก): ${d3Verdict}`);
+      mainSummaryLines.push(`- ข้อ 4.1 (การแพร่กระจาย): ${d4Verdict}`);
+    } else if (ans.q2_exposureActive === 'no') {
+      const q42Verdict = ans.q4_2_significantCurrent === 'yes' ? 'มีผู้ได้รับผลกระทบเป็นจำนวนมาก' : (ans.q4_2_significantCurrent === 'no' ? 'ไม่มีผู้ได้รับผลกระทบจำนวนมาก' : 'ยังไม่ระบุ');
+      mainSummaryLines.push(`- ข้อ 4.2 (ผลกระทบปัจจุบัน): ${q42Verdict}`);
+    }
+  }
+
+  mainSummaryLines.push(`- ข้อ 5.1 (ศักยภาพระบบ): ${d5Verdict}`);
+  if (ans.q1_highThreat !== 'yes' && ans.q3_severityHigh === 'yes' && ans.q4_spreadFuture === 'yes') {
+    mainSummaryLines.push(`- ข้อ 5.2 (ระบบสุขภาพล่ม): ${d52Verdict}`);
+  }
+
+  notesList.push(mainSummaryLines.join('\n'));
+
+  // 3. ข้อย่อยและบันทึกย่อยในแต่ละโมดูล (Sub-criteria & Notes - กรองข้อขัดแย้งกับข้อหลัก)
   const subItems = [
     { id: 'sub_d1_1', noteId: 'note_d1_1', domain: 'd1', label: '1.1 โรคติดต่ออันตราย 13 โรค' },
     { id: 'sub_d1_2', noteId: 'note_d1_2', domain: 'd1', label: '1.2 ไวรัสโคโรนาสายพันธุ์ใหม่ (SARS/MERS)' },
@@ -215,6 +248,34 @@ function compileUserNotes() {
     const val = state.subAnswers[item.id];
     const noteEl = document.getElementById(item.noteId);
     const noteText = (noteEl ? noteEl.value.trim() : (state.notes[item.noteId] || '')).trim();
+
+    // กฎการตรวจสอบข้อขัดแย้ง (Conflict Checks against User Override):
+    let isConflicting = false;
+
+    // Conflict 1: หากข้อหลัก 1 สรุปว่า 'no' แต่ข้อย่อยระบุว่าใช่ (val === 'yes') -> ขัดแย้งกับการตัดสินใจข้อหลัก
+    if (item.domain === 'd1' && ans.q1_highThreat === 'no' && val === 'yes') {
+      isConflicting = true;
+    }
+    // Conflict 2: หากข้อหลัก 2 สรุปว่า 'no' (ไม่มีการสัมผัสแล้ว) แต่ข้อย่อยระบุว่าใช่ (val === 'yes') -> ขัดแย้ง
+    if (item.domain === 'd2' && ans.q2_exposureActive === 'no' && val === 'yes') {
+      isConflicting = true;
+    }
+    // Conflict 3: หากข้อหลัก 3 สรุปว่า 'no' (ไม่รุนแรง) แต่ข้อย่อยระบุว่าใช่ (val === 'yes') -> ขัดแย้ง
+    if (item.domain === 'd3' && ans.q3_severityHigh === 'no' && val === 'yes') {
+      isConflicting = true;
+    }
+    // Conflict 4: หากข้อหลัก 4.1 สรุปว่า 'no' (ไม่แพร่กระจายกว้าง) แต่ข้อย่อยระบุว่าใช่ (val === 'yes') -> ขัดแย้ง
+    if (item.domain === 'd4' && ans.q4_spreadFuture === 'no' && val === 'yes') {
+      isConflicting = true;
+    }
+    // Conflict 5: หากข้อหลัก 5.1 สรุปว่า 'yes' (ศักยภาพพอ) และ 5.2 เป็น 'no' (ไม่ล่ม) แต่อุปสรรค 5.1D เป็น 'yes' -> ขัดแย้ง
+    if (item.domain === 'd5_d' && ans.q5_1_capacitySufficient === 'yes' && ans.q5_2_systemOverwhelmed === 'no' && val === 'yes') {
+      isConflicting = true;
+    }
+
+    // หากขัดแย้งกับการตัดสินใจข้อหลักของผู้ประเมิน ให้ตัดทิ้ง ไม่นำมาสรุปให้ AI สับสน
+    if (isConflicting) return;
+
     if (val === 'yes' || noteText) {
       const statusTh = val === 'yes' ? 'ใช่ (Yes)' : (val === 'no' ? 'ไม่ใช่ (No)' : 'ยังไม่ระบุ');
       validSubNotes.push(`- ${item.label}: สถานะ=${statusTh}${noteText ? ` [บันทึก: ${noteText}]` : ''}`);
@@ -222,25 +283,26 @@ function compileUserNotes() {
   });
 
   if (validSubNotes.length > 0) {
-    notesList.push(`[ข้อมูลสนับสนุนและบันทึกข้อย่อย]:\n` + validSubNotes.join('\n'));
+    notesList.push(`[ข้อมูลสนับสนุนและบันทึกข้อย่อยที่สอดคล้องกับข้อหลัก]:\n` + validSubNotes.join('\n'));
   }
 
-  // 3. บันทึกย่อตามรายมิติ
+  // 4. บันทึกย่อตามรายมิติ (General Notes)
   const generalNotes = [
-    { id: 'note_q1_general', label: 'บันทึกภาพรวมข้อ 1 (ภัยคุกคาม)' },
-    { id: 'note_q2_general', label: 'บันทึกภาพรวมข้อ 2 (การสัมผัส)' },
-    { id: 'note_q3_general', label: 'บันทึกภาพรวมข้อ 3 (ความรุนแรง)' },
-    { id: 'note_q4_general', label: 'บันทึกภาพรวมข้อ 4.1 (การแพร่กระจาย)' },
-    { id: 'note_q4_2_general', label: 'บันทึกภาพรวมข้อ 4.2 (ผู้ได้รับผลกระทบ)' },
-    { id: 'note_q5_2_general', label: 'บันทึกภาพรวมข้อ 5.2 (ระบบสุขภาพล่ม)' },
-    { id: 'note_q5_general', label: 'บันทึกภาพรวมข้อ 5.1 (ศักยภาพระบบ)' }
+    { id: 'note_q1_general', key: 'd1', label: 'บันทึกภาพรวมข้อ 1 (ภัยคุกคาม)' },
+    { id: 'note_q2_general', key: 'd2', label: 'บันทึกภาพรวมข้อ 2 (การสัมผัส)' },
+    { id: 'note_q3_general', key: 'd3', label: 'บันทึกภาพรวมข้อ 3 (ความรุนแรง)' },
+    { id: 'note_q4_general', key: 'd4', label: 'บันทึกภาพรวมข้อ 4.1 (การแพร่กระจาย)' },
+    { id: 'note_q4_2_general', key: 'd4_2', label: 'บันทึกภาพรวมข้อ 4.2 (ผู้ได้รับผลกระทบ)' },
+    { id: 'note_q5_2_general', key: 'd5_2', label: 'บันทึกภาพรวมข้อ 5.2 (ระบบสุขภาพล่ม)' },
+    { id: 'note_q5_general', key: 'd5', label: 'บันทึกภาพรวมข้อ 5.1 (ศักยภาพระบบ)' }
   ];
 
   const validGeneral = [];
   generalNotes.forEach(f => {
     const el = document.getElementById(f.id);
-    if (el && el.value.trim()) {
-      validGeneral.push(`- ${f.label}: ${el.value.trim()}`);
+    const val = (el ? el.value.trim() : (state.domainNotes[f.key] || '')).trim();
+    if (val) {
+      validGeneral.push(`- ${f.label}: ${val}`);
     }
   });
 
