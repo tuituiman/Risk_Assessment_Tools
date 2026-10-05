@@ -57,14 +57,16 @@ function getMainAssessmentSheet(ss) {
     targetSheet = ss.insertSheet("Audit_Trail");
   }
 
-  // สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล (17 คอลัมน์มาตรฐาน)
+  // สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล (19 คอลัมน์มาตรฐาน)
   if (targetSheet.getLastRow() === 0) {
     var headers = [
       "Assessment_ID",
       "Timestamp",
+      "Assessment_Date",
       "Event_Name",
       "Location",
       "Assessor_Name",
+      "Clinical_Details",
       "Risk_Question",
       "D1_HighThreat",
       "D2_Exposure",
@@ -85,46 +87,40 @@ function getMainAssessmentSheet(ss) {
     headerRange.setFontColor("#ffffff");
     headerRange.setFontWeight("bold");
   } else {
-    // สำหรับชีตเดิมที่มี 16 คอลัมน์อยู่แล้ว: ตรวจสอบและแทรก Risk_Question อัตโนมัติโดยข้อมูลเก่าไม่หาย
-    ensureRiskQuestionColumn(targetSheet);
+    // สำหรับชีตเดิม: ตรวจสอบและเพิ่มคอลัมน์ Metadata ที่จำเป็นอัตโนมัติ โดยข้อมูลเก่าไม่สูญหาย
+    ensureMetadataColumns(targetSheet);
   }
 
   return targetSheet;
 }
 
 /**
- * ตรวจสอบและแทรกคอลัมน์ Risk_Question อัตโนมัติ (หากชีตเดิมมี 16 คอลัมน์)
- * โดยแทรกต่อจาก Assessor_Name (คอลัมน์ 5) เพื่อให้ข้อมูลเดิมไม่สูญหาย
+ * ตรวจสอบและเพิ่มคอลัมน์ Metadata ที่สำคัญ (Assessment_Date, Clinical_Details, Risk_Question)
+ * หากชีตเดิมยังไม่มีคอลัมน์เหล่านี้ ระบบจะต่อท้ายคอลัมน์ให้อัตโนมัติ ป้องกันข้อมูลเดิมขยับหรือเสียหาย
  */
-function ensureRiskQuestionColumn(sheet) {
+function ensureMetadataColumns(sheet) {
   try {
     var lastCol = sheet.getLastColumn();
     if (lastCol < 1) return;
     var headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-    var hasRiskQ = false;
-    var assessorIdx = -1;
-    for (var i = 0; i < headerRow.length; i++) {
-      var h = String(headerRow[i] || "").trim();
-      if (h === "Risk_Question") {
-        hasRiskQ = true;
-        break;
+    var colTitles = headerRow.map(function (h) { return String(h || "").trim(); });
+
+    var neededCols = ["Assessment_Date", "Clinical_Details", "Risk_Question"];
+    for (var i = 0; i < neededCols.length; i++) {
+      var colName = neededCols[i];
+      if (colTitles.indexOf(colName) === -1) {
+        sheet.insertColumnAfter(sheet.getLastColumn());
+        var newColIdx = sheet.getLastColumn();
+        var cell = sheet.getRange(1, newColIdx);
+        cell.setValue(colName);
+        cell.setBackground("#e11d48");
+        cell.setFontColor("#ffffff");
+        cell.setFontWeight("bold");
+        colTitles.push(colName);
       }
-      if (h === "Assessor_Name") {
-        assessorIdx = i;
-      }
-    }
-    if (!hasRiskQ) {
-      var insertAfter = (assessorIdx >= 0) ? (assessorIdx + 1) : 5;
-      if (insertAfter > lastCol) insertAfter = lastCol;
-      sheet.insertColumnAfter(insertAfter);
-      var newCell = sheet.getRange(1, insertAfter + 1);
-      newCell.setValue("Risk_Question");
-      newCell.setBackground("#e11d48");
-      newCell.setFontColor("#ffffff");
-      newCell.setFontWeight("bold");
     }
   } catch (err) {
-    Logger.log("ensureRiskQuestionColumn note: " + err);
+    Logger.log("ensureMetadataColumns note: " + err);
   }
 }
 
@@ -377,9 +373,11 @@ function doPost(e) {
     var valMap = {
       "Assessment_ID": finalId,
       "Timestamp": data.timestamp || new Date().toLocaleString("th-TH"),
+      "Assessment_Date": data.assessmentDate || "",
       "Event_Name": data.eventName || "",
       "Location": data.location || "",
       "Assessor_Name": data.assessorName || "",
+      "Clinical_Details": data.clinicalDetails || "",
       "Risk_Question": data.riskQuestion || "",
       "D1_HighThreat": data.d1_highThreat || "",
       "D2_Exposure": data.d2_exposure || "",
@@ -528,13 +526,19 @@ function doGet(e) {
           var rowEvent = getVal("Event_Name", 2).trim();
           var rawPayloadStr = getVal("Raw_Payload", colMap.hasOwnProperty("Raw_Payload") ? colMap["Raw_Payload"] : (r.length - 1));
           var riskQuestionVal = getVal("Risk_Question");
+          var clinicalDetailsVal = getVal("Clinical_Details");
+          var assessmentDateVal = getVal("Assessment_Date");
 
-          // หากคอลัมน์ Risk_Question ว่าง (กรณีเคสเดิมก่อนอัปเดต) ให้ดึงจาก rawPayload
-          if (!riskQuestionVal && rawPayloadStr) {
+          // หากคอลัมน์ใดว่าง (กรณีเคสเดิมก่อนอัปเดต) ให้ดึงจาก rawPayload
+          if (rawPayloadStr) {
             try {
               var parsedRaw = JSON.parse(rawPayloadStr);
-              if (parsedRaw && parsedRaw.riskQuestion) {
-                riskQuestionVal = String(parsedRaw.riskQuestion);
+              if (parsedRaw) {
+                if (!riskQuestionVal && parsedRaw.riskQuestion) riskQuestionVal = String(parsedRaw.riskQuestion);
+                if (!clinicalDetailsVal && parsedRaw.clinicalDetails) clinicalDetailsVal = String(parsedRaw.clinicalDetails);
+                if (!clinicalDetailsVal && parsedRaw.metadata && parsedRaw.metadata.clinicalDetails) clinicalDetailsVal = String(parsedRaw.metadata.clinicalDetails);
+                if (!assessmentDateVal && parsedRaw.assessmentDate) assessmentDateVal = String(parsedRaw.assessmentDate);
+                if (!assessmentDateVal && parsedRaw.metadata && parsedRaw.metadata.assessmentDate) assessmentDateVal = String(parsedRaw.metadata.assessmentDate);
               }
             } catch (rawErr) {}
           }
@@ -543,9 +547,11 @@ function doGet(e) {
             records.push({
               id: rowId || ("IRA-" + (i + 1 < 1000 ? ("000" + (i + 1)).slice(-3) : String(i + 1)) + "-" + new Date().getFullYear()),
               timestamp: getVal("Timestamp", 1),
+              assessmentDate: assessmentDateVal,
               eventName: rowEvent || "เหตุการณ์ประเมิน",
               location: getVal("Location", 3),
               assessorName: getVal("Assessor_Name", 4),
+              clinicalDetails: clinicalDetailsVal,
               riskQuestion: riskQuestionVal,
               d1_highThreat: getVal("D1_HighThreat", 6),
               d2_exposure: getVal("D2_Exposure", 7),

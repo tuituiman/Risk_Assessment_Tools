@@ -53,6 +53,48 @@ function formatOnlyDate(raw) {
 }
 
 /**
+ * แปลงวันที่ในรูปแบบต่างๆ (เช่น DD/MM/YYYY, YYYY/MM/DD, พ.ศ./ค.ศ., หรือ ISO string) ให้เป็น YYYY-MM-DD
+ * เพื่อใช้กำหนดค่าให้กับ <input type="date"> ได้อย่างถูกต้องโดยไม่ถูก browser ล้างค่าทิ้ง
+ */
+function normalizeToIsoDate(raw) {
+  if (!raw) return '';
+  const str = String(raw).trim();
+  if (!str || str === '-') return '';
+
+  // 1. ตรวจสอบ YYYY-MM-DD หรือ YYYY/MM/DD
+  const ymdMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (ymdMatch) {
+    let y = parseInt(ymdMatch[1], 10);
+    if (y > 2400) y -= 543; // แปลง พ.ศ. เป็น ค.ศ.
+    const m = String(ymdMatch[2]).padStart(2, '0');
+    const d = String(ymdMatch[3]).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  // 2. ตรวจสอบ DD/MM/YYYY หรือ DD-MM-YYYY
+  const dmyMatch = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if (dmyMatch) {
+    const d = String(dmyMatch[1]).padStart(2, '0');
+    const m = String(dmyMatch[2]).padStart(2, '0');
+    let y = parseInt(dmyMatch[3], 10);
+    if (y > 2400) y -= 543; // แปลง พ.ศ. เป็น ค.ศ.
+    return `${y}-${m}-${d}`;
+  }
+
+  // 3. ลองแปลงด้วย Date parser
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    let y = parsed.getFullYear();
+    if (y > 2400) y -= 543;
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  return '';
+}
+
+/**
  * ป้องกัน XSS จากข้อมูลที่รับเข้าตาราง
  */
 function escapeHtml(value) {
@@ -344,10 +386,7 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
 
       state.auditHistory = data.events.map(r => {
         const rowId = String(r.id || '').trim();
-        const candidate = localMap.get(rowId);
-        const sameCase = candidate &&
-          String(candidate.eventName || '').trim().toLowerCase() === String(r.eventName || '').trim().toLowerCase();
-        const local = sameCase ? candidate : null;
+        const local = localMap.get(rowId) || null;
         let parsedPayload = null;
 
         if (r.rawPayload) {
@@ -358,8 +397,38 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
           }
         }
 
+        const pMeta = (parsedPayload && parsedPayload.metadata) || {};
+        const pNotes = (parsedPayload && parsedPayload.notes) || (local && local.notes) || {};
+        const pDomainNotes = (parsedPayload && parsedPayload.domainNotes) || (local && local.domainNotes) || {};
+        const pSubAnswers = (parsedPayload && parsedPayload.subAnswers) || (local && local.subAnswers) || {};
+        const pAnswers = (parsedPayload && parsedPayload.answers) || (local && local.answers) || {};
+
+        let clinicVal = r.clinicalDetails || (parsedPayload && parsedPayload.clinicalDetails) || pMeta.clinicalDetails || (local && local.clinicalDetails) || '';
+        let focalVal = r.riskQuestion || (parsedPayload && parsedPayload.riskQuestion) || pMeta.riskQuestion || (local && local.riskQuestion) || '';
+        let dateVal = r.assessmentDate || (parsedPayload && parsedPayload.assessmentDate) || pMeta.assessmentDate || (local && local.assessmentDate) || '';
+
+        // กรณีข้อมูลมาจากชีตรุ่นเก่าที่ไม่มีคอลัมน์เฉพาะ: ดึงจาก User_Notes ที่บันทึกไว้เป็นข้อความ
+        if (!focalVal && r.userNotes && r.userNotes.includes('[🎯 ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]:')) {
+          const matchFocal = r.userNotes.match(/\[🎯 ประเด็น\/คำถามที่ต้องการประเมินความเสี่ยง\]:\s*([\s\S]*?)(?=\n\[|$)/);
+          if (matchFocal && matchFocal[1]) focalVal = matchFocal[1].trim();
+        }
+        if (!clinicVal && r.userNotes && r.userNotes.includes('[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น]:')) {
+          const matchClinic = r.userNotes.match(/\[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น\]:\s*([\s\S]*?)(?=\n\[|$)/);
+          if (matchClinic && matchClinic[1]) clinicVal = matchClinic[1].trim();
+        }
+
         return Object.assign({}, local || {}, r, parsedPayload || {}, {
           id: rowId,
+          eventName: r.eventName || (local && local.eventName) || pMeta.eventName || 'เหตุการณ์ประเมิน',
+          location: r.location || (local && local.location) || pMeta.location || '',
+          assessorName: r.assessorName || (local && local.assessorName) || pMeta.assessorName || '',
+          assessmentDate: dateVal,
+          clinicalDetails: clinicVal,
+          riskQuestion: focalVal,
+          notes: pNotes,
+          domainNotes: pDomainNotes,
+          subAnswers: pSubAnswers,
+          answers: pAnswers,
           syncedToSheet: true
         });
       });
@@ -580,6 +649,7 @@ function exportHistoryCSV(state, showToast) {
 // ผูกเข้ากับ Global Object
 window.IraSheets = {
   formatOnlyDate: formatOnlyDate,
+  normalizeToIsoDate: normalizeToIsoDate,
   escapeHtml: escapeHtml,
   jsArgAttr: jsArgAttr,
   generateNextAssessmentId: generateNextAssessmentId,

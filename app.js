@@ -205,6 +205,11 @@ function compileUserNotes() {
     notesList.push(`[🎯 ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]:\n${state.metadata.riskQuestion.trim()}`);
   }
 
+  // 1.1 ข้อมูลทางคลินิกและระบาดวิทยาเบื้องต้น
+  if (state.metadata.clinicalDetails && state.metadata.clinicalDetails.trim()) {
+    notesList.push(`[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น]:\n${state.metadata.clinicalDetails.trim()}`);
+  }
+
   // 2. ข้อยุติของข้อหลักทั้ง 5 มิติ (User Decision / Source of Truth)
   const d1Verdict = ans.q1_highThreat === 'yes' ? 'ใช่ - เป็นเชื้อหรือภัยคุกคามระดับสูงที่กำหนด' : (ans.q1_highThreat === 'no' ? 'ไม่ใช่/ไม่แน่ชัด - ไม่จัดเป็นเชื้อคุกคามระดับสูงเบื้องต้น' : 'ยังไม่ระบุ');
   const d2Verdict = ans.q2_exposureActive === 'yes' ? 'ใช่ - ประชาชนยังมีแนวโน้มการสัมผัสต่อเนื่อง' : (ans.q2_exposureActive === 'no' ? 'ไม่ใช่ - ยุติการสัมผัสแล้วหรือไม่มีแนวโน้มสัมผัสต่อเนื่อง' : 'ยังไม่ระบุ');
@@ -488,39 +493,266 @@ function renderAuditTable() {
 }
 
 /**
- * ดูรายละเอียดประวัติและถามเพื่อโหลดขึ้นมาแก้ไข
+ * ดูรายละเอียดประวัติฉบับเต็มผ่าน Modal พร้อมตัวเลือกโหลดขึ้นมาแก้ไข
  */
 window.viewAuditDetail = function (id) {
   const item = state.auditHistory.find(x => x.id === id);
   if (!item) return;
 
-  const dateStr = item.assessmentDate || (item.timestamp ? window.IraSheets.formatOnlyDate(item.timestamp) : '-');
-  const focalStr = item.riskQuestion ? `ประเด็นที่ประเมิน: ${item.riskQuestion}\n` : '';
-  const clinicSnippet = item.clinicalDetails
-    ? (item.clinicalDetails.length > 70 ? item.clinicalDetails.slice(0, 70) + '...' : item.clinicalDetails)
-    : '-';
-
-  const shouldLoad = confirm(
-    `[ประวัติการประเมิน #${item.id}]\n` +
-    `เหตุการณ์: ${item.eventName}\n` +
-    `พื้นที่: ${item.location}\n` +
-    `วันที่ประเมิน: ${dateStr}\n` +
-    `ผู้ประเมิน: ${item.assessorName}\n` +
-    focalStr +
-    `ข้อมูลทางคลินิก: ${clinicSnippet}\n` +
-    `ระดับความเสี่ยง: ${item.riskLevel} (${item.riskLevelEn} Risk)\n` +
-    `สถานะ Google Sheet: ${item.syncedToSheet ? '✅ ซิงก์แล้ว' : '⏳ ยังไม่ซิงก์'}\n\n` +
-    `มาตรการที่แนะนำ:\n${item.actions}\n\n` +
-    `บทสรุป AI:\n${item.aiSummary}\n\n` +
-    `=========================================\n` +
-    `👉 ต้องการโหลดเคสนี้ขึ้นมาแก้ไขเพื่อ "บันทึกทับ (Overwrite)" หรือไม่?\n` +
-    `- กด ตกลง (OK): เพื่อดึงข้อมูลเดิมทั้งหมดขึ้นมาแก้ไข\n` +
-    `- กด ยกเลิก (Cancel): ปิดหน้าต่างนี้`
-  );
-
-  if (shouldLoad) {
-    loadAuditRecordToForm(id);
+  // Clone and parse rawPayload if exists
+  const record = Object.assign({}, item);
+  if (record.rawPayload && typeof record.rawPayload === 'string') {
+    try {
+      const parsed = JSON.parse(record.rawPayload);
+      Object.assign(record, parsed);
+    } catch (e) {
+      console.warn('Failed to parse rawPayload in viewAuditDetail:', e);
+    }
   }
+
+  // Fallback extraction of clinicalDetails and riskQuestion from userNotes if empty
+  if (!record.clinicalDetails && record.userNotes) {
+    const clinMatch = record.userNotes.match(/\[สรุปอาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น\]:\s*([\s\S]*?)(?=\n\n\[|$)/);
+    if (clinMatch && clinMatch[1]) {
+      record.clinicalDetails = clinMatch[1].trim();
+    }
+  }
+  if (!record.riskQuestion && record.userNotes) {
+    const focalMatch = record.userNotes.match(/\[ประเด็นที่ประเมิน\]:\s*([^\n]+)/);
+    if (focalMatch && focalMatch[1]) {
+      record.riskQuestion = focalMatch[1].trim();
+    }
+  }
+
+  const modal = document.getElementById('auditDetailModal');
+  const titleEl = document.getElementById('detailModalTitle');
+  const subtitleEl = document.getElementById('detailModalSubtitle');
+  const bodyEl = document.getElementById('auditDetailModalBody');
+  const btnLoad = document.getElementById('btnLoadDetailToForm');
+  const btnCopy = document.getElementById('btnCopyDetailSummary');
+  const btnClose = document.getElementById('btnCloseAuditDetailModal');
+  const btnCloseFooter = document.getElementById('btnCloseDetailFooter');
+
+  if (!modal || !bodyEl) return;
+
+  if (titleEl) titleEl.textContent = record.eventName ? `รายละเอียด: ${record.eventName}` : 'รายละเอียดบันทึกเหตุการณ์';
+  const rawDate = record.assessmentDate || record.timestamp;
+  const displayDate = rawDate ? window.IraSheets.formatOnlyDate(rawDate) : '-';
+  if (subtitleEl) subtitleEl.textContent = `รหัสการประเมิน: ${record.id} | วันที่ประเมิน: ${displayDate} | ผู้ประเมิน: ${record.assessorName || '-'}`;
+
+  let colorBadge = 'status-unk';
+  if (record.riskLevelEn === 'Very Low' || record.riskLevelEn === 'Low') colorBadge = 'status-no';
+  if (record.riskLevelEn === 'High' || record.riskLevelEn === 'Very High') colorBadge = 'status-yes';
+
+  const riskBadgeHtml = `<span class="audit-risk-badge ${colorBadge}" style="font-size: 0.92rem; padding: 4px 14px;">${window.IraSheets.escapeHtml(record.riskLevel || 'ไม่ระบุ')} (${window.IraSheets.escapeHtml(record.riskLevelEn || 'Incomplete')})</span>`;
+  const sheetBadgeHtml = record.syncedToSheet
+    ? `<span class="badge-synced" style="font-size: 0.82rem;">✅ ซิงก์บน Google Sheet แล้ว</span>`
+    : `<span class="badge-pending" style="font-size: 0.82rem;">⏳ บันทึกเฉพาะในเบราว์เซอร์ (ยังไม่ซิงก์ Sheet)</span>`;
+
+  // Domain Verdicts
+  const answers = record.answers || {
+    q1_highThreat: record.d1_highThreat,
+    q2_exposureActive: record.d2_exposure,
+    q3_severityHigh: record.d3_severity,
+    q4_spreadFuture: record.d4_spread,
+    q4_2_significantCurrent: record.d4_2_significantCurrent,
+    q5_1_capacitySufficient: record.d5_capacity,
+    q5_2_systemOverwhelmed: record.d5_2_systemOverwhelmed
+  };
+
+  const domainLabels = [
+    { label: '1. ภัยคุกคามสูง', val: answers.q1_highThreat },
+    { label: '2. การสัมผัส', val: answers.q2_exposureActive },
+    { label: '3. ความรุนแรง', val: answers.q3_severityHigh },
+    { label: '4. การแพร่กระจาย', val: answers.q4_spreadFuture },
+    { label: '5.1 ศักยภาพระบบ', val: answers.q5_1_capacitySufficient }
+  ];
+
+  const domainsHtml = domainLabels.map(d => {
+    let text = '-';
+    let color = '#64748b';
+    if (d.val === 'yes') { text = 'ใช่ (Yes)'; color = '#be123c'; }
+    else if (d.val === 'no') { text = 'ไม่ใช่ (No)'; color = '#047857'; }
+    return `
+      <div class="detail-domain-badge">
+        <span style="color: #64748b; font-size: 0.74rem;">${d.label}</span>
+        <span class="badge-tag-val" style="color: ${color};">${text}</span>
+      </div>
+    `;
+  }).join('');
+
+  // Sub-criteria checklist notes if present
+  let subNotesListHtml = '';
+  if (record.subAnswers && typeof record.subAnswers === 'object' && Object.keys(record.subAnswers).length > 0) {
+    const subLabels = {
+      sub_d1_1: '1.1 โรคติดต่ออันตราย 13 โรค',
+      sub_d1_2: '1.2 ไวรัสโคโรนาสายพันธุ์ใหม่',
+      sub_d1_3: '1.3 ไข้หวัดใหญ่สายพันธุ์ใหม่',
+      sub_d1_4: '1.4 โปลิโอธรรมชาติ / แอนแทรกซ์',
+      sub_d2_a: '2A ต้นตอโรคยังคงมีอยู่ในพื้นที่',
+      sub_d2_b: '2B ประชาชนยังสัมผัสต่อเนื่อง',
+      sub_d2_c: '2C ประชากรยังไม่มีภูมิคุ้มกัน',
+      sub_d3_a: '3A อัตราป่วยตาย CFR ปานกลางถึงสูง',
+      sub_d3_b: '3B ผู้ป่วยวิกฤต/ICU สูง',
+      sub_d3_c: '3C อัตราป่วยตายสูงกว่าอดีต',
+      sub_d4_a: '4.1A ติดต่อสูง/เดินทางรวมกลุ่ม',
+      sub_d4_b: '4.1B Attack Rate พุ่งเร็ว',
+      sub_d4_c: '4.1C ผู้ป่วยมากในเวลาสั้น',
+      sub_d5_a: '5.1A มาตรการสาธารณสุขพร้อม',
+      sub_d5_b: '5.1B เตียง ยา บุคลากรพร้อม',
+      sub_d5_c: '5.1C สื่อสารความเสี่ยงมีประสิทธิผล',
+      sub_d5_d: '5.1D ความเปราะบาง/อุปสรรคสำคัญ'
+    };
+
+    const subItems = [];
+    Object.keys(record.subAnswers).forEach(key => {
+      const val = record.subAnswers[key];
+      if (val) {
+        const lbl = subLabels[key] || key;
+        const noteKey = 'note_' + key.replace('sub_', '');
+        const noteText = (record.notes && record.notes[noteKey]) || '';
+        const tagText = val === 'yes' ? '<span style="color:#be123c; font-weight:700;">ใช่ (Yes)</span>' : '<span style="color:#047857; font-weight:700;">ไม่ใช่ (No)</span>';
+        subItems.push(`<div style="font-size: 0.8rem; padding: 4px 0; border-bottom: 1px dashed #f1f5f9;">
+          <strong>• ${lbl}:</strong> ${tagText} ${noteText ? `<span style="color:#475569;">(${window.IraSheets.escapeHtml(noteText)})</span>` : ''}
+        </div>`);
+      }
+    });
+
+    if (subItems.length > 0) {
+      subNotesListHtml = `
+        <div class="detail-card-section" style="margin-top: 10px;">
+          <div class="detail-section-title"><span>⚡</span> ข้อย่อยและการประเมินเกณฑ์สนับสนุน:</div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">${subItems.join('')}</div>
+        </div>
+      `;
+    }
+  }
+
+  // Clinical Details Section
+  const clinicalHtml = record.clinicalDetails
+    ? `<div class="detail-clinical-box">${window.IraSheets.escapeHtml(record.clinicalDetails)}</div>`
+    : `<div style="font-size: 0.84rem; color: #94a3b8; font-style: italic;">ไม่มีการบันทึกข้อมูลอาการทางคลินิก</div>`;
+
+  // Risk Question Section
+  const focalHtml = record.riskQuestion
+    ? `<div style="background: #fff1f2; border: 1px solid rgba(225,29,72,0.25); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 6px; font-size: 0.86rem; color: #881337; font-weight: 600;">🎯 ${window.IraSheets.escapeHtml(record.riskQuestion)}</div>`
+    : `<div style="font-size: 0.84rem; color: #94a3b8; font-style: italic;">ไม่ได้ระบุประเด็นจำเพาะ</div>`;
+
+  // Actions Section
+  const actionsHtml = record.actions && record.actions !== '-'
+    ? `<div style="font-size: 0.85rem; color: #1e293b; background: #fff5f7; border: 1px solid rgba(225,29,72,0.18); border-radius: 6px; padding: 10px 12px; line-height: 1.5; white-space: pre-line;">${window.IraSheets.escapeHtml(record.actions)}</div>`
+    : `<div style="font-size: 0.84rem; color: #94a3b8; font-style: italic;">ไม่มีข้อเสนอแนะเชิงมาตรการ</div>`;
+
+  // AI Summary Section
+  const aiHtml = record.aiSummary && record.aiSummary !== '-'
+    ? `<div class="ai-output-box" style="margin-top: 4px; max-height: 250px; overflow-y: auto; font-size: 0.85rem; line-height: 1.6;">${window.IraSheets.escapeHtml(record.aiSummary)}</div>`
+    : `<div style="font-size: 0.84rem; color: #94a3b8; font-style: italic;">ยังไม่มีการวิเคราะห์สรุปจาก AI ในเคสนี้</div>`;
+
+  bodyEl.innerHTML = `
+    <!-- General Profile -->
+    <div class="detail-card-section">
+      <div class="detail-section-title"><span>🏷️</span> ข้อมูลทั่วไปของเหตุการณ์:</div>
+      <div class="detail-grid-2">
+        <div>
+          <div class="detail-item-label">ชื่อเหตุการณ์ / โรค</div>
+          <div class="detail-item-value" style="color: #be123c;">${window.IraSheets.escapeHtml(record.eventName || '-')}</div>
+        </div>
+        <div>
+          <div class="detail-item-label">พื้นที่เกิดเหตุ / หน่วยงาน</div>
+          <div class="detail-item-value">📍 ${window.IraSheets.escapeHtml(record.location || '-')}</div>
+        </div>
+        <div>
+          <div class="detail-item-label">วันที่ประเมิน</div>
+          <div class="detail-item-value">📅 ${displayDate}</div>
+        </div>
+        <div>
+          <div class="detail-item-label">ผู้ประเมิน</div>
+          <div class="detail-item-value">👤 ${window.IraSheets.escapeHtml(record.assessorName || '-')}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Question -->
+    <div class="detail-card-section">
+      <div class="detail-section-title"><span>🎯</span> ประเด็น / คำถามที่ต้องการประเมินความเสี่ยง (Risk Question):</div>
+      ${focalHtml}
+    </div>
+
+    <!-- Clinical Details -->
+    <div class="detail-card-section">
+      <div class="detail-section-title"><span>🏥</span> สรุปอาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น:</div>
+      ${clinicalHtml}
+    </div>
+
+    <!-- Result & Decisions -->
+    <div class="detail-card-section">
+      <div class="detail-section-title" style="justify-content: space-between;">
+        <span><span>⚖️</span> ผลการประเมินและ 5 มิติเกณฑ์ WHO IRA:</span>
+        ${sheetBadgeHtml}
+      </div>
+      <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 0.84rem; color: #475569;">ระดับความเสี่ยง:</span>
+        ${riskBadgeHtml}
+      </div>
+      <div class="detail-domains-grid">
+        ${domainsHtml}
+      </div>
+      ${subNotesListHtml}
+    </div>
+
+    <!-- Actions -->
+    <div class="detail-card-section">
+      <div class="detail-section-title"><span>🛡️</span> มาตรการตอบโต้ที่แนะนำ:</div>
+      ${actionsHtml}
+    </div>
+
+    <!-- AI Summary -->
+    <div class="detail-card-section">
+      <div class="detail-section-title"><span>🤖</span> บทสรุปและการสังเคราะห์โดย AI:</div>
+      ${aiHtml}
+    </div>
+  `;
+
+  // Bind footer buttons for this modal
+  const closeModal = () => {
+    modal.classList.remove('open', 'active');
+    modal.style.display = 'none';
+  };
+
+  if (btnClose) btnClose.onclick = closeModal;
+  if (btnCloseFooter) btnCloseFooter.onclick = closeModal;
+
+  if (btnLoad) {
+    btnLoad.onclick = () => {
+      closeModal();
+      loadAuditRecordToForm(id);
+    };
+  }
+
+  if (btnCopy) {
+    btnCopy.onclick = () => {
+      const summaryText =
+        `[รายงานการประเมินความเสี่ยง #${record.id}]\n` +
+        `เหตุการณ์: ${record.eventName || '-'}\n` +
+        `พื้นที่: ${record.location || '-'}\n` +
+        `วันที่: ${displayDate}\n` +
+        `ผู้ประเมิน: ${record.assessorName || '-'}\n` +
+        (record.riskQuestion ? `ประเด็นที่ประเมิน: ${record.riskQuestion}\n` : '') +
+        (record.clinicalDetails ? `ข้อมูลคลินิก: ${record.clinicalDetails}\n` : '') +
+        `ระดับความเสี่ยง: ${record.riskLevel || '-'} (${record.riskLevelEn || '-'})\n\n` +
+        (record.actions ? `มาตรการแนะนำ:\n${record.actions}\n\n` : '') +
+        (record.aiSummary ? `บทสรุป AI:\n${record.aiSummary}\n` : '');
+
+      navigator.clipboard.writeText(summaryText).then(() => {
+        showToast('คัดลอกรายละเอียดเคสเรียบร้อยแล้ว', 'success');
+      }).catch(() => {
+        showToast('ไม่สามารถคัดลอกได้อัตโนมัติ', 'warn');
+      });
+    };
+  }
+
+  modal.classList.add('open', 'active');
+  modal.style.display = 'flex';
 };
 
 /**
@@ -617,13 +849,28 @@ window.loadAuditRecordToForm = function (id) {
 
   setActiveAssessmentId(record.id);
 
-  // 1. ฟื้นฟูฟิลด์ Metadata
+  // 1. ฟื้นฟูฟิลด์ Metadata พร้อมการแปลงรูปแบบวันที่ให้เข้ากับ HTML5 date input (YYYY-MM-DD)
   state.metadata.eventName = record.eventName || '';
   state.metadata.location = record.location || '';
-  state.metadata.assessmentDate = record.assessmentDate || (record.timestamp ? window.IraSheets.formatOnlyDate(record.timestamp) : new Date().toISOString().split('T')[0]);
+  const rawDate = record.assessmentDate || record.timestamp || '';
+  state.metadata.assessmentDate = window.IraSheets.normalizeToIsoDate(rawDate) || new Date().toISOString().split('T')[0];
   state.metadata.assessorName = record.assessorName || '';
   state.metadata.clinicalDetails = record.clinicalDetails || '';
   state.metadata.riskQuestion = record.riskQuestion || '';
+
+  // Fallback: ดึง clinicalDetails และ riskQuestion จาก userNotes หากไม่มีในคอลัมน์เฉพาะ
+  if (!state.metadata.clinicalDetails && record.userNotes) {
+    const clinMatch = record.userNotes.match(/\[สรุปอาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น\]:\s*([\s\S]*?)(?=\n\n\[|$)/);
+    if (clinMatch && clinMatch[1]) {
+      state.metadata.clinicalDetails = clinMatch[1].trim();
+    }
+  }
+  if (!state.metadata.riskQuestion && record.userNotes) {
+    const focalMatch = record.userNotes.match(/\[ประเด็นที่ประเมิน\]:\s*([^\n]+)/);
+    if (focalMatch && focalMatch[1]) {
+      state.metadata.riskQuestion = focalMatch[1].trim();
+    }
+  }
 
   const eventNameInput = document.getElementById('eventName');
   const locationInput = document.getElementById('location');
@@ -724,6 +971,12 @@ window.loadAuditRecordToForm = function (id) {
 
   // 6. คำนวณความเสี่ยงและอัปเดต Flow ใหม่
   window.IraEngine.evaluateRiskAlgorithm(state);
+
+  // หากอยู่บนมือถือ ให้สลับกลับมาที่แท็บแบบประเมิน (Form)
+  const btnTabForm = document.getElementById('btnMobileTabForm');
+  if (btnTabForm) {
+    btnTabForm.click();
+  }
 
   // เลื่อนกลับขึ้นบนสุดอย่างราบรื่น
   window.scrollTo({ top: 0, behavior: 'smooth' });
