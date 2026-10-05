@@ -510,30 +510,106 @@ window.viewAuditDetail = function (id) {
 };
 
 /**
+ * ล้างข้อมูลใน Form และ State ทั้งหมดให้สะอาดหมดจด 100%
+ * ป้องกันปัญหา Memory Leak หรือการค้างค่าของเคสเก่าเมื่อดึงเคสสลับไปมา
+ */
+window.resetFormStateAndUI = function () {
+  // 1. ล้าง State คำตอบหลักและข้อย่อย
+  state.answers = {
+    q1_highThreat: null,
+    q2_exposureActive: null,
+    q3_severityHigh: null,
+    q4_spreadFuture: null,
+    q4_2_significantCurrent: null,
+    q5_1_capacitySufficient: null,
+    q5_2_systemOverwhelmed: null
+  };
+  state.subAnswers = {};
+  state.subCriteria = {
+    q1: { autoChoice: null, userOverridden: false },
+    q2: { autoChoice: null, userOverridden: false },
+    q3: { autoChoice: null, userOverridden: false },
+    q4: { autoChoice: null, userOverridden: false },
+    q5_1: { autoChoice: null, userOverridden: false }
+  };
+  state.notes = {};
+  state.domainNotes = { d1: '', d2: '', d3: '', d4: '', d4_2: '', d5: '', d5_2: '' };
+  state.aiSummary = '';
+
+  // 2. ล้าง UI Radio ข้อหลัก
+  document.querySelectorAll('.opt-card input[type="radio"]').forEach(inp => {
+    inp.checked = false;
+  });
+  document.querySelectorAll('.opt-card').forEach(card => {
+    card.classList.remove('selected', 'danger-selected');
+  });
+
+  // 3. ล้าง UI ข้อย่อย (Sub-criteria Choices)
+  document.querySelectorAll('.sub-choice-group input[type="radio"]').forEach(inp => {
+    inp.checked = false;
+  });
+  document.querySelectorAll('.sub-choice-label').forEach(lbl => {
+    lbl.classList.remove('active-yes', 'active-no');
+  });
+
+  // 4. ล้างกล่องข้อความบันทึกย่อยทั้งหมด (Sub-criterion input notes)
+  document.querySelectorAll('.sub-criterion-input').forEach(textarea => {
+    textarea.value = '';
+  });
+
+  // 5. ล้างกล่องบันทึกรายมิติทั้งหมด
+  ['note_q1_general', 'note_q2_general', 'note_q3_general', 'note_q4_general', 'note_q4_2_general', 'note_q5_general', 'note_q5_2_general'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // 6. ล้างกล่องสรุป AI
+  const aiBox = document.getElementById('aiNarrativeBox');
+  if (aiBox) {
+    aiBox.textContent = 'กดปุ่ม "วิเคราะห์และสังเคราะห์ผลด้วย AI" ด้านล่าง เพื่อให้ AI สรุปรายงานสถานการณ์และข้อเสนอแนะเชิงระบาดวิทยาอย่างละเอียด...';
+  }
+
+  // 7. ล้างป้ายสถานะคำนวณอัตโนมัติ / Override
+  ['q1', 'q2', 'q3', 'q4', 'q5_1'].forEach(dim => {
+    const tag = document.getElementById(`auto_calc_tag_${dim}`);
+    if (tag) {
+      tag.style.display = 'none';
+      tag.textContent = '';
+    }
+  });
+};
+
+/**
  * โหลดข้อมูลจากประวัติกลับเข้าฟอร์ม (Full State Restoration)
  */
 window.loadAuditRecordToForm = function (id) {
   const item = state.auditHistory.find(x => x.id === id);
   if (!item) return;
 
-  if (item.rawPayload && typeof item.rawPayload === 'string') {
+  // Clone item เพื่อป้องกันการแก้ reference โดยตรง
+  const record = Object.assign({}, item);
+
+  if (record.rawPayload && typeof record.rawPayload === 'string') {
     try {
-      const parsed = JSON.parse(item.rawPayload);
-      Object.assign(item, parsed);
+      const parsed = JSON.parse(record.rawPayload);
+      Object.assign(record, parsed);
     } catch (e) {
       console.warn('Failed to parse rawPayload for item:', id, e);
     }
   }
 
-  setActiveAssessmentId(item.id);
+  // ล้างค่าเก่าทั้งหมดในฟอร์มและ State ให้เกลี้ยงก่อน เพื่อไม่ให้มีค่าค้างจากเคสก่อนหน้า
+  window.resetFormStateAndUI();
+
+  setActiveAssessmentId(record.id);
 
   // 1. ฟื้นฟูฟิลด์ Metadata
-  state.metadata.eventName = item.eventName || '';
-  state.metadata.location = item.location || '';
-  state.metadata.assessmentDate = item.assessmentDate || (item.timestamp ? window.IraSheets.formatOnlyDate(item.timestamp) : new Date().toISOString().split('T')[0]);
-  state.metadata.assessorName = item.assessorName || '';
-  state.metadata.clinicalDetails = item.clinicalDetails || '';
-  state.metadata.riskQuestion = item.riskQuestion || '';
+  state.metadata.eventName = record.eventName || '';
+  state.metadata.location = record.location || '';
+  state.metadata.assessmentDate = record.assessmentDate || (record.timestamp ? window.IraSheets.formatOnlyDate(record.timestamp) : new Date().toISOString().split('T')[0]);
+  state.metadata.assessorName = record.assessorName || '';
+  state.metadata.clinicalDetails = record.clinicalDetails || '';
+  state.metadata.riskQuestion = record.riskQuestion || '';
 
   const eventNameInput = document.getElementById('eventName');
   const locationInput = document.getElementById('location');
@@ -550,14 +626,14 @@ window.loadAuditRecordToForm = function (id) {
   if (riskQuestionInput) riskQuestionInput.value = state.metadata.riskQuestion;
 
   // 2. ฟื้นฟูคำตอบข้อหลัก 5 ข้อ
-  if (item.answers) {
-    Object.assign(state.answers, item.answers);
+  if (record.answers && typeof record.answers === 'object') {
+    Object.assign(state.answers, record.answers);
   } else {
-    state.answers.q1_highThreat = item.d1_highThreat !== '-' ? item.d1_highThreat : null;
-    state.answers.q2_exposureActive = item.d2_exposure !== '-' ? item.d2_exposure : null;
-    state.answers.q3_severityHigh = item.d3_severity !== '-' ? item.d3_severity : null;
-    state.answers.q4_spreadFuture = item.d4_spread !== '-' ? item.d4_spread : null;
-    state.answers.q5_1_capacitySufficient = item.d5_capacity !== '-' ? item.d5_capacity : null;
+    state.answers.q1_highThreat = record.d1_highThreat && record.d1_highThreat !== '-' ? record.d1_highThreat : null;
+    state.answers.q2_exposureActive = record.d2_exposure && record.d2_exposure !== '-' ? record.d2_exposure : null;
+    state.answers.q3_severityHigh = record.d3_severity && record.d3_severity !== '-' ? record.d3_severity : null;
+    state.answers.q4_spreadFuture = record.d4_spread && record.d4_spread !== '-' ? record.d4_spread : null;
+    state.answers.q5_1_capacitySufficient = record.d5_capacity && record.d5_capacity !== '-' ? record.d5_capacity : null;
   }
 
   // ซิงก์ค่าเข้า UI Radio Buttons
@@ -585,8 +661,8 @@ window.loadAuditRecordToForm = function (id) {
   });
 
   // 3. ฟื้นฟูข้อย่อย (Sub-criteria)
-  if (item.subAnswers) {
-    Object.assign(state.subAnswers, item.subAnswers);
+  if (record.subAnswers && typeof record.subAnswers === 'object') {
+    Object.assign(state.subAnswers, record.subAnswers);
     Object.keys(state.subAnswers).forEach(key => {
       const val = state.subAnswers[key];
       if (val) window.setSubChoiceVal(key, val);
@@ -594,17 +670,17 @@ window.loadAuditRecordToForm = function (id) {
   }
 
   // ฟื้นฟูบันทึกข้อย่อย (Sub-criterion input notes)
-  if (item.notes) {
-    Object.assign(state.notes, item.notes);
+  if (record.notes && typeof record.notes === 'object') {
+    Object.assign(state.notes, record.notes);
     Object.keys(state.notes).forEach(k => {
       const el = document.getElementById(k);
-      if (el) el.value = state.notes[k];
+      if (el) el.value = state.notes[k] || '';
     });
   }
 
   // 4. ฟื้นฟูบันทึกรายมิติ
-  if (item.domainNotes) {
-    Object.assign(state.domainNotes, item.domainNotes);
+  if (record.domainNotes && typeof record.domainNotes === 'object') {
+    Object.assign(state.domainNotes, record.domainNotes);
     const domainNoteInputs = [
       { id: 'note_q1_general', key: 'd1' },
       { id: 'note_q2_general', key: 'd2' },
@@ -616,21 +692,28 @@ window.loadAuditRecordToForm = function (id) {
     ];
     domainNoteInputs.forEach(({ id, key }) => {
       const el = document.getElementById(id);
-      if (el && state.domainNotes[key]) el.value = state.domainNotes[key];
+      if (el) el.value = state.domainNotes[key] || '';
     });
   }
 
+  // ฟื้นฟูสถานะ Override ของข้อย่อย หากบันทึกไว้ใน payload
+  if (record.subCriteria && typeof record.subCriteria === 'object') {
+    Object.assign(state.subCriteria, record.subCriteria);
+  }
+
   // 5. ฟื้นฟูบทสรุป AI
-  state.aiSummary = item.aiSummary && item.aiSummary !== '-' ? item.aiSummary : '';
+  state.aiSummary = record.aiSummary && record.aiSummary !== '-' ? record.aiSummary : '';
   const aiBox = document.getElementById('aiNarrativeBox');
-  if (aiBox && state.aiSummary) aiBox.textContent = state.aiSummary;
+  if (aiBox) {
+    aiBox.textContent = state.aiSummary || 'กดปุ่ม "วิเคราะห์และสังเคราะห์ผลด้วย AI" ด้านล่าง เพื่อให้ AI สรุปรายงานสถานการณ์และข้อเสนอแนะเชิงระบาดวิทยาอย่างละเอียด...';
+  }
 
   // 6. คำนวณความเสี่ยงและอัปเดต Flow ใหม่
   window.IraEngine.evaluateRiskAlgorithm(state);
 
   // เลื่อนกลับขึ้นบนสุดอย่างราบรื่น
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  showToast(`โหลดข้อมูลเคส #${item.id} (${item.eventName}) ขึ้นมาแก้ไขเรียบร้อยแล้ว`, 'success');
+  showToast(`โหลดข้อมูลเคส #${record.id} (${record.eventName}) ขึ้นมาแก้ไขเรียบร้อยแล้ว`, 'success');
 };
 
 /**
@@ -962,6 +1045,7 @@ function setupMobileTabs() {
  */
 function loadPresetWuhanOutbreak() {
   setActiveAssessmentId(null);
+  window.resetFormStateAndUI();
 
   state.metadata.eventName = 'การระบาดของโรคปอดอักเสบจากเชื้อไวรัสโคโรนาสายพันธุ์ใหม่ (Novel Coronavirus)';
   state.metadata.location = 'เมืองอู่ฮั่น มณฑลหูเป่ย์ (เชื่อมโยงตลาดค้าส่งอาหารทะเลและสัตว์ป่าฮวาหนาน)';
@@ -1086,9 +1170,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnResetToNewCase) {
     btnResetToNewCase.addEventListener('click', () => {
+      window.resetFormStateAndUI();
+      ['eventName', 'location', 'clinicalDetails', 'riskQuestion'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+        state.metadata[id] = '';
+      });
+      state.metadata.assessmentDate = new Date().toISOString().split('T')[0];
+      const dateInp = document.getElementById('assessmentDate');
+      if (dateInp) dateInp.value = state.metadata.assessmentDate;
+
       setActiveAssessmentId(null);
+      window.IraEngine.evaluateRiskAlgorithm(state);
       const nextId = window.IraSheets.generateNextAssessmentId(null, state);
-      showToast(`เปิดเซสชันสำหรับบันทึกเป็นเหตุการณ์ใหม่แล้ว (รหัสถัดไป: ${nextId})`, 'info');
+      showToast(`ล้างหน้าจอและเปิดเซสชันสำหรับบันทึกเคสใหม่แล้ว (รหัสถัดไป: ${nextId})`, 'info');
     });
   }
 
