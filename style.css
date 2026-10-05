@@ -724,6 +724,7 @@ textarea.form-control {
 .risk-result-card.risk-moderate::before { background: var(--risk-moderate); }
 .risk-result-card.risk-high::before { background: var(--risk-high); }
 .risk-result-card.risk-very-high::before { background: var(--risk-very-high); }
+.risk-result-card.risk-incomplete::before { background: #94a3b8; }
 
 .risk-header-title {
   font-size: 0.85rem;
@@ -754,6 +755,7 @@ textarea.form-control {
 .risk-verdict-summary.risk-moderate { border-left-color: var(--risk-moderate); background: #fffbeb; }
 .risk-verdict-summary.risk-high { border-left-color: var(--risk-high); background: #fff7ed; }
 .risk-verdict-summary.risk-very-high { border-left-color: var(--risk-very-high); background: #fef2f2; }
+.risk-verdict-summary.risk-incomplete { border-left-color: #94a3b8; background: #f8fafc; }
 
 .verdict-header {
   display: flex;
@@ -844,6 +846,12 @@ textarea.form-control {
   box-shadow: 0 4px 18px rgba(220, 38, 38, 0.22);
   color: #991b1b;
   animation: pulseWarning 2s infinite;
+}
+.risk-badge-box.risk-incomplete {
+  background: #f8fafc;
+  border: 2px dashed #94a3b8;
+  box-shadow: 0 2px 8px rgba(148, 163, 184, 0.15);
+  color: #475569;
 }
 
 @keyframes pulseWarning {
@@ -1734,6 +1742,12 @@ textarea.form-control {
 .mobile-risk-badge.risk-very-high,
 .mobile-floating-badge.risk-very-high {
   background: #ef4444;
+  color: #ffffff;
+}
+
+.mobile-risk-badge.risk-incomplete,
+.mobile-floating-badge.risk-incomplete {
+  background: #64748b;
   color: #ffffff;
 }
 

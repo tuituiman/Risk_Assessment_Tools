@@ -100,6 +100,11 @@
           <textarea id="clinicalDetails" class="form-control"
             placeholder="ระบุจำนวนผู้ป่วย, อาการเด่น, การตรวจพบเบื้องต้น, ประวัติการสัมผัส..."></textarea>
         </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label for="riskQuestion">ประเด็น / คำถามที่ต้องการประเมินความเสี่ยง (Risk Assessment Question / Focal Issue) *</label>
+          <textarea id="riskQuestion" class="form-control" rows="2"
+            placeholder="เช่น ความเสี่ยงต่อการแพร่กระจายของเชื้อในชุมชนและบุคลากรทางการแพทย์ในจังหวัดเชียงใหม่ ในช่วง 2 สัปดาห์ข้างหน้า..."></textarea>
+        </div>
       </div>
 
       <!-- Dynamic Flow Checklist Card -->
@@ -794,22 +799,26 @@
       </div>
 
       <!-- Live Risk Assessment Result Card -->
-      <div class="glass-card risk-result-card risk-moderate" id="riskResultCard">
+      <div class="glass-card risk-result-card risk-incomplete" id="riskResultCard">
         <div class="risk-header-title">ผลการประเมินความเสี่ยงเบื้องต้น (Initial Risk Level)</div>
 
-        <div class="risk-badge-box risk-moderate" id="riskBadgeBox">
-          <span class="risk-badge-level" id="riskLevelText">ระดับความเสี่ยง: ปานกลาง</span>
-          <span class="risk-badge-level-en" id="riskLevelEn">MODERATE RISK</span>
+        <div class="risk-badge-box risk-incomplete" id="riskBadgeBox">
+          <span class="risk-badge-level" id="riskLevelText">⏳ อยู่ระหว่างการประเมิน</span>
+          <span class="risk-badge-level-en" id="riskLevelEn">INCOMPLETE ASSESSMENT</span>
         </div>
 
         <!-- Explicit Clear Written Conclusion & Rationale Box -->
-        <div class="risk-verdict-summary risk-moderate" id="riskVerdictSummary">
+        <div class="risk-verdict-summary risk-incomplete" id="riskVerdictSummary">
+          <div class="verdict-focal-box" id="verdictFocalBox" style="display: none; margin-bottom: 8px; font-size: 0.82rem; background: rgba(225,29,72,0.06); border-radius: 6px; padding: 6px 10px; border-left: 3px solid var(--primary);">
+            <span style="font-weight: 700; color: #881337;">🎯 ประเด็นที่ประเมิน: </span>
+            <span id="verdictFocalText" style="color: #334155;">-</span>
+          </div>
           <div class="verdict-header">
             <span class="verdict-icon">📋</span>
             <strong>สรุปผลการประเมินและความหมาย:</strong>
           </div>
           <div class="verdict-desc" id="riskVerdictDesc">
-            กำลังประมวลผลการประเมินความเสี่ยง...
+            โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงตามเกณฑ์ WHO IRA
           </div>
           <div class="verdict-drivers" id="riskVerdictDrivers">
             <!-- Populated dynamically with WHO IRA criteria drivers -->
@@ -1018,7 +1027,7 @@
   <aside class="mobile-floating-bar" id="mobileFloatingBar" aria-label="Mobile Summary Bar">
     <div class="mobile-floating-info">
       <span class="mobile-floating-label">ผลประเมินขณะนี้:</span>
-      <span class="mobile-floating-badge risk-moderate" id="mobileFloatingText">ความเสี่ยง: ปานกลาง</span>
+      <span class="mobile-floating-badge risk-incomplete" id="mobileFloatingText">ความเสี่ยง: รอประเมิน</span>
     </div>
     <button class="btn btn-primary btn-sm mobile-floating-btn" id="btnMobileGoToResult">
       ดูผล & สรุป AI ➔
@@ -1028,7 +1037,11 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="app.js?v=3.4"></script>
+  <!-- Modular Application Architecture -->
+  <script src="prompts.js?v=4.0"></script>
+  <script src="algorithm.js?v=4.0"></script>
+  <script src="sheets_api.js?v=4.0"></script>
+  <script src="app.js?v=4.0"></script>
 </body>
 
 </html>
