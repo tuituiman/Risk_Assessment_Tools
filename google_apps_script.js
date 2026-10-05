@@ -5,8 +5,9 @@
  * 
  * คุณสมบัติ:
  * 1. บันทึกและเซฟทับประวัติการประเมินความเสี่ยง (Audit Trail)
- * 2. รองรับการลบ Event โดยต้องยืนยันตัวตนด้วย Username & Password
- * 3. สร้างแท็บ "Auth_Users" อัตโนมัติสำหรับเก็บ User/Password (เริ่มต้น user: admin, pass: admin)
+ * 2. รองรับช่อง "ประเด็น / คำถามที่ต้องการประเมินความเสี่ยง" (Risk_Question) พร้อม Auto-Migration ไม่กระทบข้อมูลเก่า
+ * 3. รองรับการลบ Event โดยต้องยืนยันตัวตนด้วย Username & Password
+ * 4. สร้างแท็บ "Auth_Users" อัตโนมัติสำหรับเก็บ User/Password (เริ่มต้น user: admin, pass: admin)
  *    และผู้ดูแลระบบสามารถเพิ่มผู้ใช้งานคนอื่น ๆ ในแท็บ Auth_Users ได้โดยตรง
  * 
  * วิธีการติดตั้ง / อัปเดตโค้ด:
@@ -56,7 +57,7 @@ function getMainAssessmentSheet(ss) {
     targetSheet = ss.insertSheet("Audit_Trail");
   }
 
-  // สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล
+  // สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล (17 คอลัมน์มาตรฐาน)
   if (targetSheet.getLastRow() === 0) {
     var headers = [
       "Assessment_ID",
@@ -64,6 +65,7 @@ function getMainAssessmentSheet(ss) {
       "Event_Name",
       "Location",
       "Assessor_Name",
+      "Risk_Question",
       "D1_HighThreat",
       "D2_Exposure",
       "D3_Severity",
@@ -82,9 +84,48 @@ function getMainAssessmentSheet(ss) {
     headerRange.setBackground("#e11d48"); // กรมควบคุมโรค DDC Rose
     headerRange.setFontColor("#ffffff");
     headerRange.setFontWeight("bold");
+  } else {
+    // สำหรับชีตเดิมที่มี 16 คอลัมน์อยู่แล้ว: ตรวจสอบและแทรก Risk_Question อัตโนมัติโดยข้อมูลเก่าไม่หาย
+    ensureRiskQuestionColumn(targetSheet);
   }
 
   return targetSheet;
+}
+
+/**
+ * ตรวจสอบและแทรกคอลัมน์ Risk_Question อัตโนมัติ (หากชีตเดิมมี 16 คอลัมน์)
+ * โดยแทรกต่อจาก Assessor_Name (คอลัมน์ 5) เพื่อให้ข้อมูลเดิมไม่สูญหาย
+ */
+function ensureRiskQuestionColumn(sheet) {
+  try {
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < 1) return;
+    var headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var hasRiskQ = false;
+    var assessorIdx = -1;
+    for (var i = 0; i < headerRow.length; i++) {
+      var h = String(headerRow[i] || "").trim();
+      if (h === "Risk_Question") {
+        hasRiskQ = true;
+        break;
+      }
+      if (h === "Assessor_Name") {
+        assessorIdx = i;
+      }
+    }
+    if (!hasRiskQ) {
+      var insertAfter = (assessorIdx >= 0) ? (assessorIdx + 1) : 5;
+      if (insertAfter > lastCol) insertAfter = lastCol;
+      sheet.insertColumnAfter(insertAfter);
+      var newCell = sheet.getRange(1, insertAfter + 1);
+      newCell.setValue("Risk_Question");
+      newCell.setBackground("#e11d48");
+      newCell.setFontColor("#ffffff");
+      newCell.setFontWeight("bold");
+    }
+  } catch (err) {
+    Logger.log("ensureRiskQuestionColumn note: " + err);
+  }
 }
 
 /**
@@ -329,24 +370,57 @@ function doPost(e) {
       }
     }
 
-    var rowData = [
-      finalId,
-      data.timestamp || new Date().toLocaleString("th-TH"),
-      data.eventName || "",
-      data.location || "",
-      data.assessorName || "",
-      data.d1_highThreat || "",
-      data.d2_exposure || "",
-      data.d3_severity || "",
-      data.d4_spread || "",
-      data.d5_capacity || "",
-      data.riskLevel || "",
-      data.riskLevelEn || "",
-      data.actions || "",
-      data.userNotes || "",
-      data.aiSummary || "",
-      data.rawPayload || ""
-    ];
+    // สร้าง RowData โดยจับคู่กับ Header ที่มีอยู่จริงใน Sheet (Dynamic Header Mapping ป้องกันตำแหน่งคอลัมน์เพี้ยน)
+    var lastCol = Math.max(sheet.getLastColumn(), 1);
+    var headerRow = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    
+    var valMap = {
+      "Assessment_ID": finalId,
+      "Timestamp": data.timestamp || new Date().toLocaleString("th-TH"),
+      "Event_Name": data.eventName || "",
+      "Location": data.location || "",
+      "Assessor_Name": data.assessorName || "",
+      "Risk_Question": data.riskQuestion || "",
+      "D1_HighThreat": data.d1_highThreat || "",
+      "D2_Exposure": data.d2_exposure || "",
+      "D3_Severity": data.d3_severity || "",
+      "D4_Spread": data.d4_spread || "",
+      "D5_Capacity": data.d5_capacity || "",
+      "Risk_Level_TH": data.riskLevel || "",
+      "Risk_Level_EN": data.riskLevelEn || "",
+      "Recommended_Actions": data.actions || "",
+      "User_Notes": data.userNotes || "",
+      "AI_Narrative_Summary": data.aiSummary || "",
+      "Raw_Payload": data.rawPayload || ""
+    };
+
+    var rowData = [];
+    for (var h = 0; h < headerRow.length; h++) {
+      var hName = String(headerRow[h] || "").trim();
+      rowData.push(valMap.hasOwnProperty(hName) ? valMap[hName] : "");
+    }
+
+    if (rowData.length === 0) {
+      rowData = [
+        finalId,
+        data.timestamp || new Date().toLocaleString("th-TH"),
+        data.eventName || "",
+        data.location || "",
+        data.assessorName || "",
+        data.riskQuestion || "",
+        data.d1_highThreat || "",
+        data.d2_exposure || "",
+        data.d3_severity || "",
+        data.d4_spread || "",
+        data.d5_capacity || "",
+        data.riskLevel || "",
+        data.riskLevelEn || "",
+        data.actions || "",
+        data.userNotes || "",
+        data.aiSummary || "",
+        data.rawPayload || ""
+      ];
+    }
 
     if (existingRowIndex > 1) {
       // บันทึกทับแถวเดิม
@@ -427,30 +501,63 @@ function doGet(e) {
       var lastRow = sheet.getLastRow();
       var records = [];
       if (lastRow > 1) {
-        var numCols = Math.min(Math.max(sheet.getLastColumn(), 1), 16);
+        var numCols = Math.min(Math.max(sheet.getLastColumn(), 1), 25);
+        var headerRow = sheet.getRange(1, 1, 1, numCols).getValues()[0];
+        var colMap = {};
+        for (var c = 0; c < headerRow.length; c++) {
+          var colTitle = String(headerRow[c] || "").trim();
+          if (colTitle) colMap[colTitle] = c;
+        }
+
         var values = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
         for (var i = 0; i < values.length; i++) {
           var r = values[i];
-          var rowId = r[0] ? String(r[0]).trim() : "";
-          var rowEvent = r[2] ? String(r[2]).trim() : (r[1] ? String(r[1]).trim() : "");
+          var getVal = function(colName, fallbackIdx) {
+            if (colMap.hasOwnProperty(colName) && colMap[colName] < r.length) {
+              var cellVal = r[colMap[colName]];
+              return (cellVal !== undefined && cellVal !== null) ? String(cellVal) : "";
+            }
+            if (fallbackIdx !== undefined && fallbackIdx < r.length) {
+              var fbVal = r[fallbackIdx];
+              return (fbVal !== undefined && fbVal !== null) ? String(fbVal) : "";
+            }
+            return "";
+          };
+
+          var rowId = getVal("Assessment_ID", 0).trim();
+          var rowEvent = getVal("Event_Name", 2).trim();
+          var rawPayloadStr = getVal("Raw_Payload", colMap.hasOwnProperty("Raw_Payload") ? colMap["Raw_Payload"] : (r.length - 1));
+          var riskQuestionVal = getVal("Risk_Question");
+
+          // หากคอลัมน์ Risk_Question ว่าง (กรณีเคสเดิมก่อนอัปเดต) ให้ดึงจาก rawPayload
+          if (!riskQuestionVal && rawPayloadStr) {
+            try {
+              var parsedRaw = JSON.parse(rawPayloadStr);
+              if (parsedRaw && parsedRaw.riskQuestion) {
+                riskQuestionVal = String(parsedRaw.riskQuestion);
+              }
+            } catch (rawErr) {}
+          }
+
           if (rowId || rowEvent) {
             records.push({
               id: rowId || ("IRA-" + (i + 1 < 1000 ? ("000" + (i + 1)).slice(-3) : String(i + 1)) + "-" + new Date().getFullYear()),
-              timestamp: r[1] ? String(r[1]) : "",
-              eventName: r[2] ? String(r[2]) : (rowEvent || "เหตุการณ์ประเมิน"),
-              location: r[3] ? String(r[3]) : "",
-              assessorName: r[4] ? String(r[4]) : "",
-              d1_highThreat: r[5] ? String(r[5]) : "",
-              d2_exposure: r[6] ? String(r[6]) : "",
-              d3_severity: r[7] ? String(r[7]) : "",
-              d4_spread: r[8] ? String(r[8]) : "",
-              d5_capacity: r[9] ? String(r[9]) : "",
-              riskLevel: r[10] ? String(r[10]) : "",
-              riskLevelEn: r[11] ? String(r[11]) : "",
-              actions: r[12] ? String(r[12]) : "",
-              userNotes: r[13] ? String(r[13]) : "",
-              aiSummary: r[14] ? String(r[14]) : "",
-              rawPayload: r[15] ? String(r[15]) : "",
+              timestamp: getVal("Timestamp", 1),
+              eventName: rowEvent || "เหตุการณ์ประเมิน",
+              location: getVal("Location", 3),
+              assessorName: getVal("Assessor_Name", 4),
+              riskQuestion: riskQuestionVal,
+              d1_highThreat: getVal("D1_HighThreat", 6),
+              d2_exposure: getVal("D2_Exposure", 7),
+              d3_severity: getVal("D3_Severity", 8),
+              d4_spread: getVal("D4_Spread", 9),
+              d5_capacity: getVal("D5_Capacity", 10),
+              riskLevel: getVal("Risk_Level_TH", 11),
+              riskLevelEn: getVal("Risk_Level_EN", 12),
+              actions: getVal("Recommended_Actions", 13),
+              userNotes: getVal("User_Notes", 14),
+              aiSummary: getVal("AI_Narrative_Summary", 15),
+              rawPayload: rawPayloadStr,
               syncedToSheet: true
             });
           }
