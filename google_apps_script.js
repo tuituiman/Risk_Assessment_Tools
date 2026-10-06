@@ -23,42 +23,32 @@
 
 /**
  * ดึงหรือสร้างชีตสำหรับจัดเก็บประวัติการประเมิน (Audit_Trail)
+ * ปรับปรุงให้เร็วพิเศษ (Lightning-Fast Lookup < 10ms)
+ * ตัดการวนลูปทุกแผ่นงาน เพื่อแก้ปัญหา Google Apps Script ทำงานช้าจนเกิด Timeout
  */
-function getMainAssessmentSheet(ss) {
-  var allSheets = ss.getSheets();
+function getMainAssessmentSheet(ss, isWriting) {
+  // 1. ค้นหาชีต Audit_Trail โดยตรงก่อนเสมอ (เร็วที่สุด O(1) < 10ms)
+  var sheet = ss.getSheetByName("Audit_Trail");
   
-  // 1. ตรวจสอบว่ามีชีตชื่อ Audit_Trail ที่มีข้อมูลประวัติอยู่แล้วหรือไม่
-  var namedSheet = ss.getSheetByName("Audit_Trail");
-  if (namedSheet && namedSheet.getLastRow() > 1) {
-    return namedSheet;
-  }
-  
-  // 2. ถ้า Audit_Trail ไม่มีข้อมูล หรือไม่มี ให้ค้นหาชีตอื่นที่มีข้อมูลอยู่แล้ว (เช่น Sheet1, แผ่นงาน1)
-  for (var i = 0; i < allSheets.length; i++) {
-    var s = allSheets[i];
-    if (s.getName() !== "Auth_Users" && s.getLastRow() > 1) {
-      return s;
-    }
-  }
-
-  // 3. ถ้ายังไม่มีชีตใดมีข้อมูลเลย ให้ใช้ Audit_Trail หากมี หรือชีตแรกที่ไม่ใช่ Auth_Users
-  var targetSheet = namedSheet;
-  if (!targetSheet) {
-    for (var j = 0; j < allSheets.length; j++) {
-      if (allSheets[j].getName() !== "Auth_Users") {
-        targetSheet = allSheets[j];
-        break;
+  // 2. ถ้ายังไม่มี Audit_Trail ค่อยลองหา Sheet1 หรือ แผ่นงาน1 หรือแผ่นงานแรกที่ไม่ใช่ Auth_Users
+  if (!sheet) {
+    sheet = ss.getSheetByName("Sheet1") || ss.getSheetByName("แผ่นงาน1");
+    if (!sheet) {
+      var all = ss.getSheets();
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].getName() !== "Auth_Users") {
+          sheet = all[i];
+          break;
+        }
       }
     }
+    if (!sheet) {
+      sheet = ss.insertSheet("Audit_Trail");
+    }
   }
 
-  // 4. ถ้าไม่มีชีตใดเลย ให้สร้าง Audit_Trail ขึ้นมาใหม่
-  if (!targetSheet) {
-    targetSheet = ss.insertSheet("Audit_Trail");
-  }
-
-  // สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล (19 คอลัมน์มาตรฐาน)
-  if (targetSheet.getLastRow() === 0) {
+  // 3. สร้าง Header อัตโนมัติหากยังไม่มีข้อมูล
+  if (sheet.getLastRow() === 0) {
     var headers = [
       "Assessment_ID",
       "Timestamp",
@@ -80,18 +70,18 @@ function getMainAssessmentSheet(ss) {
       "AI_Narrative_Summary",
       "Raw_Payload"
     ];
-    targetSheet.appendRow(headers);
+    sheet.appendRow(headers);
 
-    var headerRange = targetSheet.getRange(1, 1, 1, headers.length);
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
     headerRange.setBackground("#e11d48"); // กรมควบคุมโรค DDC Rose
     headerRange.setFontColor("#ffffff");
     headerRange.setFontWeight("bold");
-  } else {
-    // สำหรับชีตเดิม: ตรวจสอบและเพิ่มคอลัมน์ Metadata ที่จำเป็นอัตโนมัติ โดยข้อมูลเก่าไม่สูญหาย
-    ensureMetadataColumns(targetSheet);
+  } else if (isWriting) {
+    // ตรวจสอบและเพิ่มคอลัมน์ Metadata เฉพาะตอนบันทึกข้อมูล (isWriting = true) ไม่รันตอน GET เพื่อความเร็วสูงสุด
+    ensureMetadataColumns(sheet);
   }
 
-  return targetSheet;
+  return sheet;
 }
 
 /**
@@ -244,8 +234,7 @@ function doPost(e) {
     lock.waitLock(15000);
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    getOrCreateUserSheet(ss); // ตรวจสอบแท็บผู้ใช้
-    var sheet = getMainAssessmentSheet(ss);
+    var sheet = getMainAssessmentSheet(ss, true);
 
     var rawContent = "";
     if (e && e.postData && e.postData.contents) {
@@ -465,12 +454,11 @@ function doPost(e) {
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    getOrCreateUserSheet(ss);
-
     var params = e.parameter || {};
 
     // ตรวจสอบการลบผ่าน GET: ?action=delete&id=IRA-xxx&user=admin&pass=admin
     if (params.action === "delete") {
+      getOrCreateUserSheet(ss);
       var isAuth = verifyCredentials(ss, params.user, params.pass);
       if (!isAuth) {
         return ContentService

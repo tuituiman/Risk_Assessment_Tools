@@ -190,7 +190,7 @@ async function verifyRecordInSheet(targetId, targetEventName, url) {
   // 1. ลองตรวจสอบผ่าน checkEvent (ด่วนพิเศษ < 300ms)
   try {
     const checkUrl = `${url}${url.includes('?') ? '&' : '?'}action=checkEvent&id=${encodeURIComponent(targetId)}&_t=${Date.now()}`;
-    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined;
+    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined;
     const res = await fetch(checkUrl, { signal });
     if (res.ok) {
       const data = await res.json();
@@ -205,7 +205,7 @@ async function verifyRecordInSheet(targetId, targetEventName, url) {
   // 2. Fallback: ตรวจสอบผ่าน getEvents
   try {
     const listUrl = `${url}${url.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
-    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined;
+    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(25000) : undefined;
     const res = await fetch(listUrl, { signal });
     if (res.ok) {
       const data = await res.json();
@@ -237,8 +237,8 @@ async function sendRecordToSheetWebhook(record, url) {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // ให้เวลา 22 วินาทีเพื่อรองรับ Google Apps Script Cold Start
-      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(22000) : undefined;
+      // ให้เวลา 45 วินาทีเพื่อรองรับ Google Apps Script Cold Start
+      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -465,8 +465,8 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const fetchUrl = `${sheetsUrl}${sheetsUrl.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
-      // ให้เวลา 25 วินาที เพื่อให้ Google Apps Script Cold Start ได้อย่างเต็มที่
-      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(25000) : undefined;
+      // ให้เวลา 45 วินาที เพื่อให้ Google Apps Script Cold Start ได้อย่างเต็มที่
+      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined;
       const res = await fetch(fetchUrl, { signal: fetchSignal });
 
       if (!res.ok) {
@@ -735,7 +735,7 @@ async function executeDeleteEvent(state, helpers) {
       let isSuccess = false;
       let respMsg = '';
 
-      const delSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
+      const delSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
       try {
         const res = await fetch(deleteUrl, { signal: delSignal });
         const data = await res.json();
