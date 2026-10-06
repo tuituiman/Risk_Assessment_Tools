@@ -1753,20 +1753,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnResetToNewCase) {
     btnResetToNewCase.addEventListener('click', () => {
-      window.resetFormStateAndUI();
-      ['eventName', 'location', 'clinicalDetails', 'riskQuestion'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-        state.metadata[id] = '';
-      });
-      state.metadata.assessmentDate = new Date().toISOString().split('T')[0];
-      const dateInp = document.getElementById('assessmentDate');
-      if (dateInp) dateInp.value = state.metadata.assessmentDate;
-
+      const prevId = state.currentAssessmentId;
+      // สลับเป็นรหัสถัดไป (New Case) โดยคงข้อมูลและบันทึกเดิมในฟอร์มไว้ 100%
+      // เพื่อให้ผู้ใช้สามารถนำเคสเก่ามาเป็นเทมเพลต แก้ไขรายละเอียด แล้วบันทึกเป็นเคสใหม่ได้
       setActiveAssessmentId(null);
       window.IraEngine.evaluateRiskAlgorithm(state);
       const nextId = window.IraSheets.generateNextAssessmentId(null, state);
-      showToast(`ล้างหน้าจอและเปิดเซสชันสำหรับบันทึกเคสใหม่แล้ว (รหัสถัดไป: ${nextId})`, 'info');
+      showToast(
+        prevId
+          ? `เปิดรหัสเคสใหม่ (${nextId}) เรียบร้อยแล้ว ✨ ค้างบันทึกและคำตอบจากเคส #${prevId} ไว้ให้คุณแก้ไขแล้วบันทึกเป็นเคสใหม่ได้ทันที`
+          : `เปิดเซสชันสำหรับบันทึกเคสใหม่แล้ว (รหัส: ${nextId})`,
+        'success'
+      );
     });
   }
 
