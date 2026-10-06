@@ -428,9 +428,23 @@ async function saveToGoogleSheets(state, helpers) {
  */
 async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
   const { showToast, renderAuditTable, setActiveAssessmentId } = helpers;
-  const sheetsUrl = state.settings.googleSheetsUrl.trim();
+  const sheetsUrl = state.settings.googleSheetsUrl ? state.settings.googleSheetsUrl.trim() : '';
   if (!sheetsUrl) {
     if (!isSilent) showToast('ยังไม่ได้ตั้งค่า Google Sheets Web App URL ในหน้าตั้งค่า', 'warn');
+    return;
+  }
+
+  const badge = document.getElementById('auditSheetStatusBadge');
+  const textEl = document.getElementById('auditSheetStatusText');
+
+  // ตรวจสอบความถูกต้องของ URL เบื้องต้น
+  if (!sheetsUrl.includes('/exec')) {
+    if (badge && textEl) {
+      badge.className = 'sheet-status-badge status-disconnected';
+      textEl.textContent = 'Google Sheet: URL ไม่ถูกต้อง (ต้องลงท้ายด้วย /exec)';
+      textEl.title = 'URL ที่ถูกต้องต้องเป็น Web App URL ที่ลงท้ายด้วย /exec';
+    }
+    if (!isSilent) showToast('Google Sheets URL ต้องเป็น Web App URL ที่ลงท้ายด้วย /exec (ไม่ใช่ URL ของชีต)', 'error');
     return;
   }
 
@@ -440,115 +454,155 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
     btn.innerHTML = '⏳ กำลังดึงข้อมูล...';
   }
 
-  const badge = document.getElementById('auditSheetStatusBadge');
-  const textEl = document.getElementById('auditSheetStatusText');
   if (badge && textEl) {
     badge.className = 'sheet-status-badge status-connected';
     textEl.textContent = 'Google Sheet: ⏳ กำลังซิงก์ข้อมูล...';
   }
 
-  try {
-    const fetchUrl = `${sheetsUrl}${sheetsUrl.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
-    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
-    const res = await fetch(fetchUrl, { signal: fetchSignal });
-    const data = await res.json();
+  const maxAttempts = 2;
+  let lastErr = null;
 
-    if (data.status === 'success' && Array.isArray(data.events)) {
-      if (data.nextId) {
-        state.latestSheetNextId = String(data.nextId).trim();
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const fetchUrl = `${sheetsUrl}${sheetsUrl.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
+      // ให้เวลา 25 วินาที เพื่อให้ Google Apps Script Cold Start ได้อย่างเต็มที่
+      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(25000) : undefined;
+      const res = await fetch(fetchUrl, { signal: fetchSignal });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('สิทธิ์เข้าถึงถูกปฏิเสธ (โปรดตั้งค่า Who has access เป็น Anyone ใน Apps Script)');
+        }
+        throw new Error(`Google Apps Script ตอบกลับด้วย HTTP ${res.status}`);
       }
 
-      const sheetTabName = data.sheetName ? ` [แท็บ: ${data.sheetName}]` : '';
-      const localMap = new Map((state.auditHistory || []).map(item => [String(item.id || '').trim(), item]));
+      const data = await res.json();
 
-      state.auditHistory = data.events.map(r => {
-        const rowId = String(r.id || '').trim();
-        const local = localMap.get(rowId) || null;
-        let parsedPayload = null;
+      if (data.status === 'success' && Array.isArray(data.events)) {
+        if (data.nextId) {
+          state.latestSheetNextId = String(data.nextId).trim();
+        }
 
-        if (r.rawPayload) {
-          try {
-            parsedPayload = typeof r.rawPayload === 'string' ? JSON.parse(r.rawPayload) : r.rawPayload;
-          } catch (e) {
-            console.warn('Error parsing rawPayload from sheet row:', rowId, e);
+        const sheetTabName = data.sheetName ? ` [แท็บ: ${data.sheetName}]` : '';
+        const localMap = new Map((state.auditHistory || []).map(item => [String(item.id || '').trim(), item]));
+
+        state.auditHistory = data.events.map(r => {
+          const rowId = String(r.id || '').trim();
+          const local = localMap.get(rowId) || null;
+          let parsedPayload = null;
+
+          if (r.rawPayload) {
+            try {
+              parsedPayload = typeof r.rawPayload === 'string' ? JSON.parse(r.rawPayload) : r.rawPayload;
+            } catch (e) {
+              console.warn('Error parsing rawPayload from sheet row:', rowId, e);
+            }
           }
-        }
 
-        const pMeta = (parsedPayload && parsedPayload.metadata) || {};
-        const pNotes = (parsedPayload && parsedPayload.notes) || (local && local.notes) || {};
-        const pDomainNotes = (parsedPayload && parsedPayload.domainNotes) || (local && local.domainNotes) || {};
-        const pSubAnswers = (parsedPayload && parsedPayload.subAnswers) || (local && local.subAnswers) || {};
-        const pAnswers = (parsedPayload && parsedPayload.answers) || (local && local.answers) || {};
+          const pMeta = (parsedPayload && parsedPayload.metadata) || {};
+          const pNotes = (parsedPayload && parsedPayload.notes) || (local && local.notes) || {};
+          const pDomainNotes = (parsedPayload && parsedPayload.domainNotes) || (local && local.domainNotes) || {};
+          const pSubAnswers = (parsedPayload && parsedPayload.subAnswers) || (local && local.subAnswers) || {};
+          const pAnswers = (parsedPayload && parsedPayload.answers) || (local && local.answers) || {};
 
-        let clinicVal = r.clinicalDetails || (parsedPayload && parsedPayload.clinicalDetails) || pMeta.clinicalDetails || (local && local.clinicalDetails) || '';
-        let focalVal = r.riskQuestion || (parsedPayload && parsedPayload.riskQuestion) || pMeta.riskQuestion || (local && local.riskQuestion) || '';
-        let dateVal = r.assessmentDate || (parsedPayload && parsedPayload.assessmentDate) || pMeta.assessmentDate || (local && local.assessmentDate) || '';
+          let clinicVal = r.clinicalDetails || (parsedPayload && parsedPayload.clinicalDetails) || pMeta.clinicalDetails || (local && local.clinicalDetails) || '';
+          let focalVal = r.riskQuestion || (parsedPayload && parsedPayload.riskQuestion) || pMeta.riskQuestion || (local && local.riskQuestion) || '';
+          let dateVal = r.assessmentDate || (parsedPayload && parsedPayload.assessmentDate) || pMeta.assessmentDate || (local && local.assessmentDate) || '';
 
-        // กรณีข้อมูลมาจากชีตรุ่นเก่าที่ไม่มีคอลัมน์เฉพาะ: ดึงจาก User_Notes ที่บันทึกไว้เป็นข้อความ
-        if (!focalVal && r.userNotes && r.userNotes.includes('[🎯 ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]:')) {
-          const matchFocal = r.userNotes.match(/\[🎯 ประเด็น\/คำถามที่ต้องการประเมินความเสี่ยง\]:\s*([\s\S]*?)(?=\n\[|$)/);
-          if (matchFocal && matchFocal[1]) focalVal = matchFocal[1].trim();
-        }
-        if (!clinicVal && r.userNotes && r.userNotes.includes('[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น]:')) {
-          const matchClinic = r.userNotes.match(/\[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น\]:\s*([\s\S]*?)(?=\n\[|$)/);
-          if (matchClinic && matchClinic[1]) clinicVal = matchClinic[1].trim();
-        }
+          // กรณีข้อมูลมาจากชีตรุ่นเก่าที่ไม่มีคอลัมน์เฉพาะ: ดึงจาก User_Notes ที่บันทึกไว้เป็นข้อความ
+          if (!focalVal && r.userNotes && r.userNotes.includes('[🎯 ประเด็น/คำถามที่ต้องการประเมินความเสี่ยง]:')) {
+            const matchFocal = r.userNotes.match(/\[🎯 ประเด็น\/คำถามที่ต้องการประเมินความเสี่ยง\]:\s*([\s\S]*?)(?=\n\[|$)/);
+            if (matchFocal && matchFocal[1]) focalVal = matchFocal[1].trim();
+          }
+          if (!clinicVal && r.userNotes && r.userNotes.includes('[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น]:')) {
+            const matchClinic = r.userNotes.match(/\[อาการทางคลินิกและข้อมูลระบาดวิทยาเบื้องต้น\]:\s*([\s\S]*?)(?=\n\[|$)/);
+            if (matchClinic && matchClinic[1]) clinicVal = matchClinic[1].trim();
+          }
 
-        return Object.assign({}, local || {}, r, parsedPayload || {}, {
-          id: rowId,
-          eventName: r.eventName || (local && local.eventName) || pMeta.eventName || 'เหตุการณ์ประเมิน',
-          location: r.location || (local && local.location) || pMeta.location || '',
-          assessorName: r.assessorName || (local && local.assessorName) || pMeta.assessorName || '',
-          assessmentDate: dateVal,
-          clinicalDetails: clinicVal,
-          riskQuestion: focalVal,
-          notes: pNotes,
-          domainNotes: pDomainNotes,
-          subAnswers: pSubAnswers,
-          answers: pAnswers,
-          syncedToSheet: true
+          return Object.assign({}, local || {}, r, parsedPayload || {}, {
+            id: rowId,
+            eventName: r.eventName || (local && local.eventName) || pMeta.eventName || 'เหตุการณ์ประเมิน',
+            location: r.location || (local && local.location) || pMeta.location || '',
+            assessorName: r.assessorName || (local && local.assessorName) || pMeta.assessorName || '',
+            assessmentDate: dateVal,
+            clinicalDetails: clinicVal,
+            riskQuestion: focalVal,
+            notes: pNotes,
+            domainNotes: pDomainNotes,
+            subAnswers: pSubAnswers,
+            answers: pAnswers,
+            syncedToSheet: true
+          });
         });
-      });
 
-      // เรียงลำดับจากรหัสล่าสุดลงไป
-      state.auditHistory.sort((a, b) => {
-        const idA = String(a.id || '').trim();
-        const idB = String(b.id || '').trim();
-        return idB.localeCompare(idA, undefined, { numeric: true, sensitivity: 'base' });
-      });
+        // เรียงลำดับจากรหัสล่าสุดลงไป
+        state.auditHistory.sort((a, b) => {
+          const idA = String(a.id || '').trim();
+          const idB = String(b.id || '').trim();
+          return idB.localeCompare(idA, undefined, { numeric: true, sensitivity: 'base' });
+        });
 
-      localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
-      renderAuditTable();
+        localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
+        renderAuditTable();
 
-      if (badge && textEl) {
-        badge.className = 'sheet-status-badge status-connected';
-        if (data.events.length > 0) {
-          textEl.textContent = `Google Sheet: ซิงก์ตรงกันแล้ว (${data.events.length} เคส)${sheetTabName}`;
-        } else {
-          textEl.textContent = `Google Sheet: เชื่อมต่อแล้ว (ชีตยังว่าง 0 เคส)${sheetTabName}`;
+        if (badge && textEl) {
+          badge.className = 'sheet-status-badge status-connected';
+          if (data.events.length > 0) {
+            textEl.textContent = `Google Sheet: ซิงก์ตรงกันแล้ว (${data.events.length} เคส)${sheetTabName}`;
+          } else {
+            textEl.textContent = `Google Sheet: เชื่อมต่อแล้ว (ชีตยังว่าง 0 เคส)${sheetTabName}`;
+          }
+          textEl.title = 'เชื่อมต่อและซิงก์ข้อมูลกับ Google Sheet เรียบร้อย';
         }
-      }
 
-      if (!isSilent) {
-        showToast(`ซิงก์ประวัติสำเร็จ! ดึงข้อมูลมาทั้งหมด ${data.events.length} เหตุการณ์`, 'success');
+        if (!isSilent) {
+          showToast(`ซิงก์ประวัติสำเร็จ! ดึงข้อมูลมาทั้งหมด ${data.events.length} เหตุการณ์`, 'success');
+        }
+
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '📥 ดึงประวัติจาก Sheet';
+        }
+        return; // สำเร็จ
+      } else {
+        throw new Error(data.message || 'โครงสร้างข้อมูลจาก Google Sheet ไม่ถูกต้อง');
       }
-    } else {
-      throw new Error(data.message || 'โครงสร้างข้อมูลจาก Google Sheet ไม่ถูกต้อง');
+    } catch (err) {
+      lastErr = err;
+      console.warn(`Fetch Events attempt ${attempt} failed:`, err);
+      if (attempt < maxAttempts) {
+        if (badge && textEl) {
+          textEl.textContent = 'Google Sheet: ⏳ กำลังลองใหม่อีกครั้ง...';
+        }
+        await new Promise(r => setTimeout(r, 1500));
+      }
     }
-  } catch (err) {
-    console.error('Fetch Events Error:', err);
-    if (badge && textEl) {
-      badge.className = 'sheet-status-badge status-disconnected';
-      textEl.textContent = 'Google Sheet: เกิดข้อผิดพลาดในการดึงข้อมูล';
+  }
+
+  // หากลองครบแล้วและยังล้มเหลว
+  console.error('Fetch Events Final Error:', lastErr);
+  if (badge && textEl) {
+    badge.className = 'sheet-status-badge status-disconnected';
+    let friendlyMsg = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
+    if (lastErr) {
+      if (lastErr.name === 'TimeoutError' || (lastErr.message && (lastErr.message.includes('timeout') || lastErr.message.includes('aborted')))) {
+        friendlyMsg = 'การเชื่อมต่อหมดเวลา (Google ตอบช้าเกิน 25 วิ)';
+      } else if (lastErr.message && (lastErr.message.includes('Failed to fetch') || lastErr.message.includes('NetworkError'))) {
+        friendlyMsg = 'ไม่สามารถเชื่อมต่อได้ (ตรวจเน็ต หรือ สิทธิ์ Anyone)';
+      } else if (lastErr.message) {
+        friendlyMsg = lastErr.message;
+      }
     }
-    if (!isSilent) {
-      showToast(`ไม่สามารถดึงข้อมูลได้: ${err.message}`, 'error');
-    }
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '📥 ดึงประวัติจาก Sheet';
-    }
+    textEl.textContent = `Google Sheet: ${friendlyMsg}`;
+    textEl.title = `สาเหตุ: ${lastErr ? lastErr.message || lastErr : 'ไม่ทราบสาเหตุ'}`;
+  }
+  if (!isSilent) {
+    showToast(`ไม่สามารถดึงข้อมูลได้: ${lastErr ? lastErr.message : 'เกิดข้อผิดพลาด'}`, 'error');
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '📥 ดึงประวัติจาก Sheet';
   }
 }
 
