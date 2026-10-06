@@ -460,17 +460,75 @@ function copyAiSummary() {
 
 /**
  * เรนเดอร์ตาราง Audit Trail
+ * @param {boolean} [isLoading=false] - กำลังดึง/ซิงก์ข้อมูลจาก Google Sheets หรือไม่
+ * @param {boolean} [isFallback=false] - เกิดข้อผิดพลาดและกำลังแสดงข้อมูลแคชสำรองจากเครื่องหรือไม่
  */
-function renderAuditTable() {
+function renderAuditTable(isLoading = false, isFallback = false) {
   const tbody = document.getElementById('auditTableBody');
   if (!tbody) return;
 
-  if (state.auditHistory.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 18px;">ยังไม่มีประวัติการประเมิน (กดบันทึกหลังจากประเมินเสร็จเพื่อสร้างประวัติ)</td></tr>`;
+  // 1. สถานะกำลังโหลด (Loading State) - แสดง Spinner แทนที่ตารางทั้งหมด ไม่ให้ค้างข้อมูลเก่า
+  if (isLoading) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="table-loading-cell">
+          <div class="table-loading-container">
+            <div class="table-loading-spinner"></div>
+            <div class="table-loading-title">⏳ กำลังเชื่อมต่อและซิงก์ข้อมูลล่าสุดจาก Google Sheet...</div>
+            <div class="table-loading-subtitle">กำลังดึงประวัติการประเมินเพื่อความถูกต้องและเป็นปัจจุบันที่สุด</div>
+          </div>
+        </td>
+      </tr>
+    `;
+    const btnSyncAll = document.getElementById('btnSyncAllPending');
+    if (btnSyncAll) btnSyncAll.style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = state.auditHistory.slice(0, 30).map(rec => {
+  // 2. กรณีไม่มีข้อมูล
+  if (!state.auditHistory || state.auditHistory.length === 0) {
+    if (isFallback) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-offline-empty-cell">
+            <div class="offline-empty-container">
+              <div class="offline-empty-icon">⚠️</div>
+              <div class="offline-empty-title">ไม่สามารถเชื่อมต่อ Google Sheet ได้ และไม่มีข้อมูลประวัติในเครื่อง</div>
+              <div class="offline-empty-subtitle">โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือการตั้งค่า Web App URL</div>
+              <button type="button" class="btn btn-primary btn-sm" style="margin-top: 8px;" onclick="window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true)">🔄 ลองเชื่อมต่อใหม่</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">ยังไม่มีประวัติการประเมิน (กดบันทึกหลังจากประเมินเสร็จเพื่อสร้างประวัติ)</td></tr>`;
+    }
+    const btnSyncAll = document.getElementById('btnSyncAllPending');
+    if (btnSyncAll) btnSyncAll.style.display = 'none';
+    return;
+  }
+
+  // 3. สร้างแถวข้อมูล
+  let rowsHtml = '';
+
+  // หากเป็นโหมด Fallback (ดึงไม่สำเร็จ แสดงข้อมูลแคชในเครื่อง) ให้แสดงแถบแจ้งเตือนด้านบนสุด
+  if (isFallback) {
+    rowsHtml += `
+      <tr class="table-offline-notice-row">
+        <td colspan="7">
+          <div class="offline-warning-pill">
+            <div class="offline-warning-text-group">
+              <span>⚠️</span>
+              <span>ไม่สามารถเชื่อมต่อ Google Sheet ได้ในขณะนี้ — กำลังแสดงข้อมูลที่บันทึกไว้ในเครื่อง (ออฟไลน์)</span>
+            </div>
+            <button type="button" class="btn-offline-retry" onclick="window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true)">🔄 ลองเชื่อมต่อใหม่</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  rowsHtml += state.auditHistory.slice(0, 30).map(rec => {
     let colorBadge = 'status-unk';
     if (rec.riskLevelEn === 'Very Low' || rec.riskLevelEn === 'Low') colorBadge = 'status-no';
     if (rec.riskLevelEn === 'High' || rec.riskLevelEn === 'Very High') colorBadge = 'status-yes';
@@ -506,12 +564,14 @@ function renderAuditTable() {
     `;
   }).join('');
 
+  tbody.innerHTML = rowsHtml;
+
   // ควบคุมการแสดงผลปุ่ม "⚡ ซิงก์ที่ค้าง"
   const pendingCount = (state.auditHistory || []).filter(r => !r.syncedToSheet).length;
   const btnSyncAll = document.getElementById('btnSyncAllPending');
   const countBadge = document.getElementById('pendingSyncCount');
   if (btnSyncAll && countBadge) {
-    if (pendingCount > 0 && state.settings.googleSheetsUrl) {
+    if (pendingCount > 0 && state.settings.googleSheetsUrl && !isLoading) {
       btnSyncAll.style.display = 'inline-flex';
       countBadge.textContent = pendingCount;
     } else {
@@ -1475,7 +1535,7 @@ function setupSettingsModal() {
       showToast('บันทึกการตั้งค่าและเทมเพลต Prompt เรียบร้อยแล้ว!', 'success');
 
       if (newSheetsUrl) {
-        window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers());
+        window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true);
       }
     });
   }
@@ -1632,7 +1692,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ประเมินเริ่มต้น (สถานะ Incomplete จะทำงาน แสดงเฉพาะข้อ 1)
   window.IraEngine.evaluateRiskAlgorithm(state);
 
-  renderAuditTable();
+  const hasSheet = !!(state.settings.googleSheetsUrl && state.settings.googleSheetsUrl.trim());
+  if (hasSheet) {
+    renderAuditTable(true); // แสดง Spinner ทันทีตั้งแต่เปิดหน้าจอ ไม่ค้างตารางเก่า
+  } else {
+    renderAuditTable(false);
+  }
   updateGoogleSheetsStatusUI();
 
   // ตั้งค่าวันที่ปัจจุบัน
@@ -1642,7 +1707,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ตั้งค่า ID ถัดไป
-  const hasSheet = !!state.settings.googleSheetsUrl;
   setActiveAssessmentId(null, hasSheet);
 
   // ผูกเหตุการณ์ปุ่มต่างๆ
@@ -1667,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnCopyAi) btnCopyAi.addEventListener('click', copyAiSummary);
   if (btnExportCsv) btnExportCsv.addEventListener('click', () => window.IraSheets.exportHistoryCSV(state, showToast));
   if (btnPresetWuhan) btnPresetWuhan.addEventListener('click', loadPresetWuhanOutbreak);
-  if (btnPullSheet) btnPullSheet.addEventListener('click', () => window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers()));
+  if (btnPullSheet) btnPullSheet.addEventListener('click', () => window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true));
   const btnSyncAllPending = document.getElementById('btnSyncAllPending');
   if (btnSyncAllPending) {
     btnSyncAllPending.addEventListener('click', () => {
@@ -1723,8 +1787,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // หากเชื่อมต่อ Google Sheets URL ไว้ ให้ดึงข้อมูลประวัติทันที
-  if (state.settings.googleSheetsUrl) {
-    window.IraSheets.fetchEventsFromGoogleSheet(true, state, getAppHelpers());
+  // หากเชื่อมต่อ Google Sheets URL ไว้ ให้ดึงข้อมูลประวัติทันที พร้อมแสดงสถานะ Loading
+  if (hasSheet) {
+    window.IraSheets.fetchEventsFromGoogleSheet(true, state, getAppHelpers(), true);
   }
 });

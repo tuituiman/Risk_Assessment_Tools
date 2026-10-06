@@ -1439,6 +1439,122 @@ textarea.form-control {
   justify-content: center;
 }
 
+/* Audit Table Loading & Offline Fallback Notice States */
+.table-loading-cell {
+  padding: 44px 20px !important;
+  text-align: center;
+  background: #ffffff;
+}
+
+.table-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.table-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3.5px solid rgba(225, 29, 72, 0.15);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+  margin-bottom: 4px;
+}
+
+.table-loading-title {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.2px;
+}
+
+.table-loading-subtitle {
+  font-size: 0.82rem;
+  color: #64748b;
+  max-width: 440px;
+}
+
+.table-offline-notice-row td {
+  background: #fffbeb !important;
+  padding: 10px 16px !important;
+  border-bottom: 2px solid #fde68a !important;
+}
+
+.offline-warning-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #92400e;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.offline-warning-text-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-offline-retry {
+  background: #ffffff !important;
+  border: 1px solid #f59e0b !important;
+  color: #b45309 !important;
+  padding: 4px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 2px rgba(245, 158, 11, 0.15);
+}
+
+.btn-offline-retry:hover {
+  background: #fef3c7 !important;
+  border-color: #d97706 !important;
+  color: #78350f !important;
+}
+
+.table-offline-empty-cell {
+  padding: 44px 20px !important;
+  text-align: center;
+  background: #ffffff;
+}
+
+.offline-empty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.offline-empty-icon {
+  font-size: 2.2rem;
+  margin-bottom: 2px;
+}
+
+.offline-empty-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #881337;
+}
+
+.offline-empty-subtitle {
+  font-size: 0.82rem;
+  color: #64748b;
+  max-width: 460px;
+}
+
 /* Audit Record Detail Modal Styles */
 .detail-card-section {
   background: #ffffff;

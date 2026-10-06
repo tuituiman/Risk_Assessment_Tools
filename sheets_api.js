@@ -407,8 +407,8 @@ async function saveToGoogleSheets(state, helpers) {
 
     if (syncSuccess) {
       showToast(`บันทึกข้อมูล #${record.id} ลง Google Sheet สำเร็จแล้ว!`, 'success');
-      // ดึงประวัติล่าสุดเพื่อซิงก์รหัส
-      fetchEventsFromGoogleSheet(true, state, helpers);
+      // ดึงประวัติล่าสุดเพื่อซิงก์รหัส (ทำงานเบื้องหลัง ไม่แสดง spinner รบกวนผู้ใช้)
+      fetchEventsFromGoogleSheet(true, state, helpers, false);
     } else {
       showToast(`บันทึกในเครื่องสำเร็จ (#${record.id}) แต่ยังไม่ได้เชื่อมต่อ Google Sheet`, 'warn');
     }
@@ -425,12 +425,17 @@ async function saveToGoogleSheets(state, helpers) {
 
 /**
  * ดึงข้อมูลประวัติทั้งหมดจาก Google Sheets มาอัปเดตที่เครื่อง
+ * @param {boolean} isSilent - ไม่แสดง Toast เมื่อสำเร็จ (สำหรับ auto-sync)
+ * @param {object} state - App state
+ * @param {object} helpers - App helpers
+ * @param {boolean} [showLoading=true] - แสดงสถานะกำลังโหลด (Loading Spinner) บนตารางระหว่างดึงข้อมูลหรือไม่
  */
-async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
+async function fetchEventsFromGoogleSheet(isSilent, state, helpers, showLoading = true) {
   const { showToast, renderAuditTable, setActiveAssessmentId } = helpers;
   const sheetsUrl = state.settings.googleSheetsUrl ? state.settings.googleSheetsUrl.trim() : '';
   if (!sheetsUrl) {
     if (!isSilent) showToast('ยังไม่ได้ตั้งค่า Google Sheets Web App URL ในหน้าตั้งค่า', 'warn');
+    if (renderAuditTable) renderAuditTable(false, false);
     return;
   }
 
@@ -445,6 +450,7 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
       textEl.title = 'URL ที่ถูกต้องต้องเป็น Web App URL ที่ลงท้ายด้วย /exec';
     }
     if (!isSilent) showToast('Google Sheets URL ต้องเป็น Web App URL ที่ลงท้ายด้วย /exec (ไม่ใช่ URL ของชีต)', 'error');
+    if (renderAuditTable) renderAuditTable(false, false);
     return;
   }
 
@@ -457,6 +463,11 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
   if (badge && textEl) {
     badge.className = 'sheet-status-badge status-connected';
     textEl.textContent = 'Google Sheet: ⏳ กำลังซิงก์ข้อมูล...';
+  }
+
+  // หากเปิดการแสดงผล Loading ให้รีเซ็ตตารางเป็นสถานะกำลังโหลดทันที ไม่ค้างข้อมูลเก่า
+  if (showLoading && renderAuditTable) {
+    renderAuditTable(true, false);
   }
 
   const maxAttempts = 2;
@@ -543,7 +554,7 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
         });
 
         localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
-        renderAuditTable();
+        if (renderAuditTable) renderAuditTable(false, false);
 
         if (badge && textEl) {
           badge.className = 'sheet-status-badge status-connected';
@@ -600,6 +611,11 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
     showToast(`ไม่สามารถดึงข้อมูลได้: ${lastErr ? lastErr.message : 'เกิดข้อผิดพลาด'}`, 'error');
   }
 
+  // หากดึงล้มเหลว ให้แสดงข้อมูลแคชจากเครื่องพร้อมแถบแจ้งเตือนสถานะออฟไลน์
+  if (renderAuditTable) {
+    renderAuditTable(false, true);
+  }
+
   if (btn) {
     btn.disabled = false;
     btn.innerHTML = '📥 ดึงประวัติจาก Sheet';
@@ -633,7 +649,7 @@ async function syncSingleAuditRow(id, state, helpers) {
     } else {
       showToast(`ส่ง #${id} แล้วแต่ยืนยันผลไม่ได้ กำลังตรวจสอบกับชีต...`, 'warn');
     }
-    await fetchEventsFromGoogleSheet(true, state, helpers);
+    await fetchEventsFromGoogleSheet(true, state, helpers, false);
   } catch (err) {
     console.error('Single Sync Error:', err);
     showToast(`ไม่สามารถซิงก์ #${id} ได้: ${err.message}`, 'error');
@@ -694,8 +710,8 @@ async function syncAllPendingRecords(state, helpers) {
     showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้ โปรดตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ Web App', 'error');
   }
 
-  // ดึงข้อมูลอัปเดตครั้งสุดท้าย
-  fetchEventsFromGoogleSheet(true, state, helpers);
+  // ดึงข้อมูลอัปเดตครั้งสุดท้ายเบื้องหลัง
+  fetchEventsFromGoogleSheet(true, state, helpers, false);
 }
 
 /**
@@ -767,7 +783,7 @@ async function executeDeleteEvent(state, helpers) {
         finishLocalDeletion(eventId, state, helpers);
         closeDeleteModal();
         showToast(`ลบเหตุการณ์ #${eventId} จาก Google Sheet สำเร็จแล้ว`, 'success');
-        await fetchEventsFromGoogleSheet(true, state, helpers);
+        await fetchEventsFromGoogleSheet(true, state, helpers, false);
         return;
       }
     } else {
