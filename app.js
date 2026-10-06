@@ -105,6 +105,17 @@ function getAppHelpers() {
 }
 
 /**
+ * Debounce Utility เพื่อลดภาระการประมวลผลและการเรนเดอร์ UI ซ้ำซ้อน (High-frequency input)
+ */
+function debounce(fn, wait = 120) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+/**
  * Toast Notification Popup Helper
  */
 function showToast(message, type = 'info') {
@@ -1157,7 +1168,12 @@ function setupOptionCards() {
     });
   });
 
-  // ผูกการพิมพ์ฟิลด์ Metadata
+  // ฟังก์ชันหน่วงเวลาอัปเดตหน้าจอสำหรับข้อความประเด็นความเสี่ยง เพื่อลด UI Thrashing
+  const debouncedRiskDisplay = debounce(() => {
+    window.IraEngine.updateRiskDisplay(state);
+  }, 120);
+
+  // ผูกการพิมพ์ฟิลด์ Metadata (อัปเดต State ทันทีแบบ Synchronous 100% แต่หน่วง UI Re-render)
   ['eventName', 'location', 'assessmentDate', 'assessorName', 'clinicalDetails', 'riskQuestion'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1167,9 +1183,14 @@ function setupOptionCards() {
           updateActiveIdDisplay();
         }
         if (id === 'riskQuestion') {
-          window.IraEngine.updateRiskDisplay(state);
+          debouncedRiskDisplay();
         }
       });
+      if (id === 'riskQuestion') {
+        el.addEventListener('blur', () => {
+          window.IraEngine.updateRiskDisplay(state);
+        });
+      }
     }
   });
 

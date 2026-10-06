@@ -126,6 +126,19 @@ function isAssessmentComplete(answers) {
   return !!answers.q5_1_capacitySufficient;
 }
 
+// ==============================================================================
+// DOM Element Cache (O(1) Lazy Retrieval เพื่อลดภาระการค้นหา DOM ซ้ำซ้อน)
+// ==============================================================================
+const _domCache = new Map();
+function getDom(id) {
+  let el = _domCache.get(id);
+  if (!el) {
+    el = document.getElementById(id);
+    if (el) _domCache.set(id, el);
+  }
+  return el;
+}
+
 /**
  * ปรับปรุงการแสดงผลการ์ดคำถามแบบ Progressive Disclosure (แสดงทีละข้อตาม Flow)
  * @param {Object} state - Application State
@@ -133,23 +146,23 @@ function isAssessmentComplete(answers) {
 function updateDynamicFlow(state) {
   const { answers } = state;
 
-  const cardQ1 = document.getElementById('card_q1');
-  const cardQ2 = document.getElementById('card_q2');
-  const cardQ3 = document.getElementById('card_q3');
-  const cardQ4_1 = document.getElementById('card_q4_1');
-  const cardQ4_2 = document.getElementById('card_q4_2');
-  const cardQ5_1 = document.getElementById('card_q5_1');
-  const cardQ5_2 = document.getElementById('card_q5_2');
+  const cardQ1 = getDom('card_q1');
+  const cardQ2 = getDom('card_q2');
+  const cardQ3 = getDom('card_q3');
+  const cardQ4_1 = getDom('card_q4_1');
+  const cardQ4_2 = getDom('card_q4_2');
+  const cardQ5_1 = getDom('card_q5_1');
+  const cardQ5_2 = getDom('card_q5_2');
 
-  const bannerQ1Skip = document.getElementById('banner_q1_skip');
-  const bannerQ2Skip = document.getElementById('banner_q2_skip');
-  const bannerQ4_2VeryLow = document.getElementById('banner_q4_2_verylow');
+  const bannerQ1Skip = getDom('banner_q1_skip');
+  const bannerQ2Skip = getDom('banner_q2_skip');
+  const bannerQ4_2VeryLow = getDom('banner_q4_2_verylow');
 
-  const tag1 = document.getElementById('flowTag_q1');
-  const tag2 = document.getElementById('flowTag_q2');
-  const tag3 = document.getElementById('flowTag_q3');
-  const tag4 = document.getElementById('flowTag_q4');
-  const tag5 = document.getElementById('flowTag_q5');
+  const tag1 = getDom('flowTag_q1');
+  const tag2 = getDom('flowTag_q2');
+  const tag3 = getDom('flowTag_q3');
+  const tag4 = getDom('flowTag_q4');
+  const tag5 = getDom('flowTag_q5');
 
   // รีเซ็ตคลาส Flow Breadcrumb ทั้งหมด
   [tag1, tag2, tag3, tag4, tag5].forEach(t => {
@@ -459,16 +472,16 @@ function updateRiskDisplay(state) {
   const answers = state.answers;
   const metadata = state.metadata;
 
-  const card = document.getElementById('riskResultCard');
-  const badgeBox = document.getElementById('riskBadgeBox');
-  const textLevel = document.getElementById('riskLevelText');
-  const textLevelEn = document.getElementById('riskLevelEn');
-  const verdictSummary = document.getElementById('riskVerdictSummary');
-  const verdictDesc = document.getElementById('riskVerdictDesc');
-  const verdictDrivers = document.getElementById('riskVerdictDrivers');
-  const focalBox = document.getElementById('verdictFocalBox');
-  const focalText = document.getElementById('verdictFocalText');
-  const actionsList = document.getElementById('suggestedActionsList');
+  const card = getDom('riskResultCard');
+  const badgeBox = getDom('riskBadgeBox');
+  const textLevel = getDom('riskLevelText');
+  const textLevelEn = getDom('riskLevelEn');
+  const verdictSummary = getDom('riskVerdictSummary');
+  const verdictDesc = getDom('riskVerdictDesc');
+  const verdictDrivers = getDom('riskVerdictDrivers');
+  const focalBox = getDom('verdictFocalBox');
+  const focalText = getDom('verdictFocalText');
+  const actionsList = getDom('suggestedActionsList');
 
   // 1. อัปเดตการแสดงผล ประเด็นที่ประเมิน (Focal Issue)
   if (focalBox && focalText) {
@@ -552,12 +565,12 @@ function updateRiskDisplay(state) {
   updateDomainPill('pill-d5', answers.q1_highThreat === 'yes' ? answers.q5_1_capacitySufficient : (answers.q2_exposureActive === 'no' && answers.q4_2_significantCurrent === 'no' ? 'skip' : answers.q5_1_capacitySufficient));
 
   // 7. อัปเดต Mobile Badges & Floating Summary Bar
-  const mobBadge = document.getElementById('mobileRiskBadge');
+  const mobBadge = getDom('mobileRiskBadge');
   if (mobBadge) {
     mobBadge.textContent = result.levelTh;
     mobBadge.className = `mobile-risk-badge ${result.colorClass}`;
   }
-  const mobFloatText = document.getElementById('mobileFloatingText');
+  const mobFloatText = getDom('mobileFloatingText');
   if (mobFloatText) {
     mobFloatText.textContent = `ความเสี่ยง: ${result.levelTh}`;
     mobFloatText.className = `mobile-floating-badge ${result.colorClass}`;
@@ -568,7 +581,7 @@ function updateRiskDisplay(state) {
  * ปรับปรุงสถานะ Pill รายมิติ
  */
 function updateDomainPill(elId, val) {
-  const el = document.getElementById(elId);
+  const el = getDom(elId);
   if (!el) return;
 
   if (val === 'yes') {

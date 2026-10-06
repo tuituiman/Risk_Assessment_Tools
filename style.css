@@ -35,7 +35,7 @@
   --radius-lg: 18px;
   --radius-full: 9999px;
   
-  --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
   --font-thai: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -1046,10 +1046,12 @@ textarea.form-control {
   bottom: 0;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  will-change: opacity;
 }
 
 .modal-overlay.active,
@@ -1066,6 +1068,7 @@ textarea.form-control {
   box-shadow: 0 20px 40px rgba(136, 19, 55, 0.18);
   overflow: hidden;
   animation: modalScale 0.25s ease-out;
+  will-change: transform, opacity;
 }
 
 @keyframes modalScale {
@@ -1178,6 +1181,7 @@ textarea.form-control {
 .audit-trail-card {
   margin-top: 24px;
   background: #ffffff;
+  contain: paint, style;
 }
 
 .sheet-status-badge {

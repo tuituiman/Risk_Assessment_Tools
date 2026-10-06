@@ -186,7 +186,7 @@ function generateNextAssessmentId(customYear, state) {
 async function sendRecordToSheetWebhook(record, url) {
   let res;
   try {
-    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -372,7 +372,7 @@ async function fetchEventsFromGoogleSheet(isSilent, state, helpers) {
 
   try {
     const fetchUrl = `${sheetsUrl}${sheetsUrl.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
-    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined;
+    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
     const res = await fetch(fetchUrl, { signal: fetchSignal });
     const data = await res.json();
 
@@ -546,8 +546,9 @@ async function executeDeleteEvent(state, helpers) {
       let isSuccess = false;
       let respMsg = '';
 
+      const delSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
       try {
-        const res = await fetch(deleteUrl);
+        const res = await fetch(deleteUrl, { signal: delSignal });
         const data = await res.json();
         if (data.status === 'success') {
           isSuccess = true;
@@ -561,7 +562,8 @@ async function executeDeleteEvent(state, helpers) {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'delete', id: eventId, eventName, username, password }),
-          redirect: 'follow'
+          redirect: 'follow',
+          signal: delSignal
         });
         const postData = await postRes.json();
         if (postData.status === 'success') {

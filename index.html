@@ -8,14 +8,14 @@
   <meta name="description"
     content="ระบบช่วยประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น ตามเกณฑ์ Initial Risk Assessment (IRA) ขององค์การอนามัยโลก พร้อมบันทึก Google Sheets และสรุปบทบรรยายด้วย Typhoon AI">
 
-  <!-- Google Fonts: Prompt & Inter -->
+  <!-- Google Fonts: Prompt & Inter (Optimized weight subsets) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=2.6">
+  <link rel="stylesheet" href="style.css?v=2.7">
 </head>
 
 <body>
@@ -1128,11 +1128,11 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Modular Application Architecture -->
-  <script src="prompts.js?v=4.0"></script>
-  <script src="algorithm.js?v=4.0"></script>
-  <script src="sheets_api.js?v=4.0"></script>
-  <script src="app.js?v=4.0"></script>
+  <!-- Modular Application Architecture (Deferred non-blocking loading) -->
+  <script src="prompts.js?v=4.1" defer></script>
+  <script src="algorithm.js?v=4.1" defer></script>
+  <script src="sheets_api.js?v=4.1" defer></script>
+  <script src="app.js?v=4.1" defer></script>
 </body>
 
 </html>
