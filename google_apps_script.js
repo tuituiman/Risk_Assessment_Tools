@@ -241,7 +241,7 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
     // ป้องกันการบันทึกพร้อมกันจากหลายเครื่องในเสี้ยววินาทีเดียวกัน (Concurrency Protection)
-    lock.waitLock(10000);
+    lock.waitLock(15000);
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     getOrCreateUserSheet(ss); // ตรวจสอบแท็บผู้ใช้
@@ -489,6 +489,38 @@ function doGet(e) {
           "message": isDeleted ? "ลบข้อมูลเหตุการณ์ #" + params.id + " ใน Google Sheet สำเร็จแล้ว" : "ไม่พบข้อมูลในชีตหรือถูกลบไปแล้ว",
           "id": params.id,
           "deletedInSheet": isDeleted
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // -------------------------------------------------------------
+    // ตรวจสอบสถานะการมีอยู่ของ Event แบบด่วนพิเศษ: ?action=checkEvent&id=IRA-xxx
+    // -------------------------------------------------------------
+    if (params.action === "checkEvent") {
+      var sheet = getMainAssessmentSheet(ss);
+      var lastRow = sheet.getLastRow();
+      var reqId = params.id ? String(params.id).trim().toLowerCase() : "";
+      var found = false;
+      var foundId = "";
+
+      if (lastRow > 1 && reqId) {
+        var idValues = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+        for (var idx = 0; idx < idValues.length; idx++) {
+          var curId = String(idValues[idx][0]).trim();
+          if (curId.toLowerCase() === reqId) {
+            found = true;
+            foundId = curId;
+            break;
+          }
+        }
+      }
+
+      return ContentService
+        .createTextOutput(JSON.stringify({
+          "status": "success",
+          "exists": found,
+          "found": found,
+          "id": foundId || params.id
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }

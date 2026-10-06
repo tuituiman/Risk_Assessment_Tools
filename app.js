@@ -505,6 +505,19 @@ function renderAuditTable() {
       </tr>
     `;
   }).join('');
+
+  // ควบคุมการแสดงผลปุ่ม "⚡ ซิงก์ที่ค้าง"
+  const pendingCount = (state.auditHistory || []).filter(r => !r.syncedToSheet).length;
+  const btnSyncAll = document.getElementById('btnSyncAllPending');
+  const countBadge = document.getElementById('pendingSyncCount');
+  if (btnSyncAll && countBadge) {
+    if (pendingCount > 0 && state.settings.googleSheetsUrl) {
+      btnSyncAll.style.display = 'inline-flex';
+      countBadge.textContent = pendingCount;
+    } else {
+      btnSyncAll.style.display = 'none';
+    }
+  }
 }
 
 /**
@@ -1655,6 +1668,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnExportCsv) btnExportCsv.addEventListener('click', () => window.IraSheets.exportHistoryCSV(state, showToast));
   if (btnPresetWuhan) btnPresetWuhan.addEventListener('click', loadPresetWuhanOutbreak);
   if (btnPullSheet) btnPullSheet.addEventListener('click', () => window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers()));
+  const btnSyncAllPending = document.getElementById('btnSyncAllPending');
+  if (btnSyncAllPending) {
+    btnSyncAllPending.addEventListener('click', () => {
+      window.IraSheets.syncAllPendingRecords(state, getAppHelpers());
+    });
+  }
+
+  // ตรวจจับเครือข่ายกลับมาออนไลน์ เพื่อซิงก์ข้อมูลที่ค้างอยู่อัตโนมัติ (Online Auto-Sync)
+  window.addEventListener('online', () => {
+    const pendingCount = (state.auditHistory || []).filter(r => !r.syncedToSheet).length;
+    if (pendingCount > 0 && state.settings.googleSheetsUrl) {
+      showToast(`🌐 เชื่อมต่ออินเทอร์เน็ตแล้ว กำลังซิงก์ ${pendingCount} รายการที่ค้างขึ้น Google Sheet...`, 'info');
+      window.IraSheets.syncAllPendingRecords(state, getAppHelpers());
+    }
+  });
+
   if (btnConnectSheetAudit) btnConnectSheetAudit.addEventListener('click', window.openSettingsModal);
   if (btnQuickConnectSheet) btnQuickConnectSheet.addEventListener('click', window.openSettingsModal);
 

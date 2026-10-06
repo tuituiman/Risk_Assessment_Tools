@@ -181,36 +181,113 @@ function generateNextAssessmentId(customYear, state) {
 }
 
 /**
+ * ตรวจสอบความถูกต้องว่าข้อมูลลงชีตจริงหรือไม่ (Verification Double-Check via GET)
+ * แก้ปัญหา False-Negative ที่ Google บันทึกแถวแล้ว แต่เบราว์เซอร์ติด CORS Redirect Error
+ */
+async function verifyRecordInSheet(targetId, targetEventName, url) {
+  if (!targetId && !targetEventName) return { verified: false, id: null };
+
+  // 1. ลองตรวจสอบผ่าน checkEvent (ด่วนพิเศษ < 300ms)
+  try {
+    const checkUrl = `${url}${url.includes('?') ? '&' : '?'}action=checkEvent&id=${encodeURIComponent(targetId)}&_t=${Date.now()}`;
+    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined;
+    const res = await fetch(checkUrl, { signal });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && (data.exists || data.found)) {
+        return { verified: true, id: data.id || targetId };
+      }
+    }
+  } catch (e) {
+    // หาก Apps Script เดิมยังไม่มี checkEvent ให้ fallback สู่ getEvents
+  }
+
+  // 2. Fallback: ตรวจสอบผ่าน getEvents
+  try {
+    const listUrl = `${url}${url.includes('?') ? '&' : '?'}action=getEvents&_t=${Date.now()}`;
+    const signal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined;
+    const res = await fetch(listUrl, { signal });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.status === 'success' && Array.isArray(data.events)) {
+        const found = data.events.find(ev => {
+          const matchId = targetId && String(ev.id).trim().toLowerCase() === String(targetId).trim().toLowerCase();
+          const matchEvent = targetEventName && String(ev.eventName).trim().toLowerCase() === String(targetEventName).trim().toLowerCase();
+          return matchId || matchEvent;
+        });
+        if (found) {
+          return { verified: true, id: found.id || targetId };
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Fallback verification exception:', e);
+  }
+
+  return { verified: false, id: null };
+}
+
+/**
  * ส่งคำขอ HTTP POST ไปยัง Google Apps Script Web App Endpoint
+ * มาพร้อมระบบ Auto-Retry และ False-Negative Detection (Verification Double Check)
  */
 async function sendRecordToSheetWebhook(record, url) {
-  let res;
-  try {
-    const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined;
-    res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(record),
-      redirect: 'follow',
-      signal: fetchSignal
-    });
-  } catch (netErr) {
-    console.warn('Sheet POST network exception:', netErr);
-    return { confirmed: false, data: null };
+  const maxAttempts = 2;
+  let lastNetErr = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // ให้เวลา 22 วินาทีเพื่อรองรับ Google Apps Script Cold Start
+      const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(22000) : undefined;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record),
+        redirect: 'follow',
+        signal: fetchSignal
+      });
+
+      if (!res.ok) {
+        console.warn(`Sheet responded with HTTP ${res.status} on attempt ${attempt}`);
+        if (res.status === 401 || res.status === 403) {
+          return { confirmed: false, data: null, error: 'permission_denied' };
+        }
+      } else {
+        try {
+          const data = await res.json();
+          if (data && data.status === 'success') {
+            return { confirmed: true, data };
+          }
+        } catch (parseErr) {
+          // หาก HTTP ok แต่ parse JSON ล้มเหลว (Google redirect ไป HTML echo) ให้ทวนสอบ
+          const check = await verifyRecordInSheet(record.id, record.eventName, url);
+          if (check.verified) {
+            return { confirmed: true, data: { status: 'success', id: check.id, verifiedByQuery: true } };
+          }
+          return { confirmed: true, data: { status: 'success' } };
+        }
+      }
+    } catch (netErr) {
+      lastNetErr = netErr;
+      console.warn(`Sheet POST network exception (Attempt ${attempt}/${maxAttempts}):`, netErr);
+
+      // ก่อนจะลองใหม่หรือสรุปว่าล้มเหลว ให้ทำ Verification Check เสมอ
+      // เพราะ Google Apps Script มักจะบันทึกข้อมูลเรียบร้อยแล้ว แต่เบราว์เซอร์ติด CORS 302 Redirect
+      const check = await verifyRecordInSheet(record.id, record.eventName, url);
+      if (check.verified) {
+        console.log(`[Bulletproof Sync] Record #${check.id} verified in Sheet despite POST network glitch!`);
+        return { confirmed: true, data: { status: 'success', id: check.id, verifiedByQuery: true } };
+      }
+
+      if (attempt < maxAttempts) {
+        // รอ 1.2 วินาทีก่อนลองใหม่ (ป้องกัน Cold Start ชั่วคราว)
+        await new Promise(r => setTimeout(r, 1200));
+      }
+    }
   }
 
-  if (!res.ok) {
-    console.warn(`Sheet responded with HTTP ${res.status}`);
-    return { confirmed: false, data: null };
-  }
-
-  try {
-    const data = await res.json();
-    return { confirmed: true, data };
-  } catch (parseErr) {
-    // Apps Script อาจ redirect สำเร็จแต่ parse JSON ไม่ได้
-    return { confirmed: true, data: { status: 'success' } };
-  }
+  // หากลองครบแล้วและทวนสอบแล้วยังไม่เจอใน Sheet
+  return { confirmed: false, data: null, error: lastNetErr ? lastNetErr.message : 'timeout' };
 }
 
 /**
@@ -510,6 +587,64 @@ async function syncSingleAuditRow(id, state, helpers) {
 }
 
 /**
+ * ซิงก์ประวัติทั้งหมดที่ยังค้างอยู่ (syncedToSheet !== true) ขึ้น Google Sheet รวดเดียว
+ */
+async function syncAllPendingRecords(state, helpers) {
+  const { showToast, renderAuditTable, setActiveAssessmentId } = helpers;
+  const sheetsUrl = state.settings.googleSheetsUrl ? state.settings.googleSheetsUrl.trim() : '';
+  if (!sheetsUrl) {
+    showToast('กรุณาระบุ Google Sheets Web App URL ในหน้าตั้งค่าก่อน', 'warn');
+    return;
+  }
+
+  const pending = (state.auditHistory || []).filter(r => !r.syncedToSheet);
+  if (pending.length === 0) {
+    showToast('ไม่มีข้อมูลค้างซิงก์ ทุกรายการตรงกับ Google Sheet แล้ว ✨', 'info');
+    return;
+  }
+
+  const btnSyncAll = document.getElementById('btnSyncAllPending');
+  if (btnSyncAll) {
+    btnSyncAll.disabled = true;
+    btnSyncAll.innerHTML = `⏳ กำลังซิงก์ (${pending.length} รายการ)...`;
+  }
+
+  showToast(`กำลังส่งข้อมูลที่ค้างอยู่ ${pending.length} รายการขึ้น Google Sheet...`, 'info');
+  let successCount = 0;
+
+  for (const item of pending) {
+    try {
+      const res = await sendRecordToSheetWebhook(item, sheetsUrl);
+      if (res.confirmed) {
+        if (res.data && res.data.id) item.id = String(res.data.id).trim();
+        item.syncedToSheet = true;
+        successCount++;
+      }
+    } catch (e) {
+      console.warn('Error syncing pending item:', item.id, e);
+    }
+  }
+
+  localStorage.setItem('ira_audit_history', JSON.stringify(state.auditHistory.slice(0, 100)));
+  renderAuditTable();
+
+  if (btnSyncAll) {
+    btnSyncAll.disabled = false;
+  }
+
+  if (successCount === pending.length) {
+    showToast(`ซิงก์ข้อมูลขึ้น Google Sheet สำเร็จครบทั้ง ${successCount} รายการแล้ว! 🎉`, 'success');
+  } else if (successCount > 0) {
+    showToast(`ซิงก์สำเร็จ ${successCount} จาก ${pending.length} รายการ (รายการที่เหลือสามารถกดซิงก์ใหม่ได้)`, 'warn');
+  } else {
+    showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้ โปรดตรวจสอบอินเทอร์เน็ตหรือสิทธิ์ Web App', 'error');
+  }
+
+  // ดึงข้อมูลอัปเดตครั้งสุดท้าย
+  fetchEventsFromGoogleSheet(true, state, helpers);
+}
+
+/**
  * ดำเนินการลบเหตุการณ์ (ส่งไปยัง Google Sheet ด้วย Action delete)
  */
 async function executeDeleteEvent(state, helpers) {
@@ -655,10 +790,12 @@ window.IraSheets = {
   escapeHtml: escapeHtml,
   jsArgAttr: jsArgAttr,
   generateNextAssessmentId: generateNextAssessmentId,
+  verifyRecordInSheet: verifyRecordInSheet,
   sendRecordToSheetWebhook: sendRecordToSheetWebhook,
   saveToGoogleSheets: saveToGoogleSheets,
   fetchEventsFromGoogleSheet: fetchEventsFromGoogleSheet,
   syncSingleAuditRow: syncSingleAuditRow,
+  syncAllPendingRecords: syncAllPendingRecords,
   executeDeleteEvent: executeDeleteEvent,
   exportHistoryCSV: exportHistoryCSV
 };
