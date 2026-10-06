@@ -620,7 +620,7 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ทดสอบการเชื่อมต่อปกติ
+    // ทดสอบการเชื่อมต่อปกติ หรือ Ping ปลุกระบบ
     return ContentService
       .createTextOutput(JSON.stringify({
         "status": "success",
@@ -633,5 +633,32 @@ function doGet(e) {
     return ContentService
       .createTextOutput(JSON.stringify({ "status": "error", "message": error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * =====================================================================
+ * ฟังก์ชันช่วยปลุกระบบอัตโนมัติ (Keep-Alive Time-driven Trigger)
+ * =====================================================================
+ * วิธีตั้งเวลาให้ Google ไม่หลับ:
+ * 1. ในหน้า Apps Script ให้คลิกเมนูรูปนาฬิกา "Triggers" (ทริกเกอร์) ด้านซ้ายมือ
+ * 2. กดปุ่ม "+ Add Trigger" (+ เพิ่มทริกเกอร์) มุมขวาล่าง
+ * 3. เลือกฟังก์ชันที่จะเรียกใช้: keepAliveTrigger
+ * 4. เลือกแหล่งที่มาของเหตุการณ์: "Time-driven" (ตามเวลา)
+ * 5. เลือกประเภททริกเกอร์: "Hour timer" (ตัวจับเวลารายชั่วโมง) -> "Every hour" (ทุก 1 ชั่วโมง)
+ *    หรือ "Minutes timer" -> "Every 30 minutes" (ทุก 30 นาที)
+ * 6. กดบันทึก (Save)
+ * =====================================================================
+ */
+function keepAliveTrigger() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Audit_Trail");
+    if (sheet) {
+      var lastRow = sheet.getLastRow();
+      Logger.log("Keep-Alive Trigger Ping OK at " + new Date().toISOString() + " (Rows: " + lastRow + ")");
+    }
+  } catch (e) {
+    Logger.log("Keep-Alive Trigger Exception: " + e);
   }
 }
