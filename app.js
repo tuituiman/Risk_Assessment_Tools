@@ -1072,6 +1072,45 @@ window.loadAuditRecordToForm = function (id) {
 };
 
 /**
+ * หา Card ID ของคำถามข้อ 4 ตามเส้นทาง Exposure
+ */
+window.getCardIdForDomain4 = function () {
+  if (state && state.answers && state.answers.q2_exposureActive === 'no') {
+    return 'card_q4_2';
+  }
+  return 'card_q4_1';
+};
+
+/**
+ * เลื่อนหน้าจอไปยังการ์ดคำถามที่ต้องการ พร้อมเอฟเฟกต์กระพริบเน้นการ์ด
+ * @param {string} cardId - รหัส Element ID เช่น 'card_q5_2'
+ */
+window.scrollToQuestionCard = function (cardId) {
+  if (!cardId) return;
+
+  // หากอยู่บนจอมือถือและกำลังดูแท็บผลลัพธ์ ให้สลับมาแท็บแบบประเมินก่อน
+  const btnTabForm = document.getElementById('btnMobileTabForm');
+  if (btnTabForm && window.innerWidth <= 960) {
+    btnTabForm.click();
+  }
+
+  const el = document.getElementById(cardId);
+  if (!el) return;
+
+  // เลื่อนหน้าจอมายังการ์ดอย่างนุ่มนวล
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // ใส่ Animation เน้นการ์ดคำถาม
+  el.classList.remove('question-card-pulse');
+  void el.offsetWidth; // Force reflow
+  el.classList.add('question-card-pulse');
+
+  setTimeout(() => {
+    el.classList.remove('question-card-pulse');
+  }, 2500);
+};
+
+/**
  * แสดง Modal ยืนยันการลบเหตุการณ์
  */
 window.promptDeleteEvent = function (id) {

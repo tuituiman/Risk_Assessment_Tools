@@ -825,32 +825,39 @@
           <div class="verdict-desc" id="riskVerdictDesc">
             โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงตามเกณฑ์ WHO IRA
           </div>
+          <!-- Missing Assessments Box: แสดงข้อที่ยังขาดการประเมินอย่างชัดเจน -->
+          <div id="missingAssessmentsBox" class="missing-eval-box" style="display: none;"></div>
           <div class="verdict-drivers" id="riskVerdictDrivers">
             <!-- Populated dynamically with WHO IRA criteria drivers -->
           </div>
         </div>
 
         <!-- 5 Domains Status Breakdown -->
-        <div class="domain-pills">
-          <div class="domain-pill-item">
+        <div class="domain-pills" id="domainPillsContainer">
+          <div class="domain-pill-item clickable" id="pillItem_d1" onclick="window.scrollToQuestionCard('card_q1')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 1">
             <span>1. ภัยคุกคามสูง:</span>
             <span class="domain-pill-status" id="pill-d1">-</span>
           </div>
-          <div class="domain-pill-item">
+          <div class="domain-pill-item clickable" id="pillItem_d2" onclick="window.scrollToQuestionCard('card_q2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 2">
             <span>2. การสัมผัส:</span>
             <span class="domain-pill-status" id="pill-d2">-</span>
           </div>
-          <div class="domain-pill-item">
+          <div class="domain-pill-item clickable" id="pillItem_d3" onclick="window.scrollToQuestionCard('card_q3')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 3">
             <span>3. ความรุนแรง:</span>
             <span class="domain-pill-status" id="pill-d3">-</span>
           </div>
-          <div class="domain-pill-item">
-            <span>4. การแพร่กระจาย:</span>
+          <div class="domain-pill-item clickable" id="pillItem_d4" onclick="window.scrollToQuestionCard(window.getCardIdForDomain4())" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 4">
+            <span id="label-pill-d4">4. การแพร่กระจาย:</span>
             <span class="domain-pill-status" id="pill-d4">-</span>
           </div>
-          <div class="domain-pill-item">
-            <span>5. ศักยภาพระบบ:</span>
+          <div class="domain-pill-item clickable" id="pillItem_d5" onclick="window.scrollToQuestionCard('card_q5_1')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.1">
+            <span id="label-pill-d5">5. ศักยภาพระบบ:</span>
             <span class="domain-pill-status" id="pill-d5">-</span>
+          </div>
+          <!-- 5.2 การล่มของระบบสุขภาพ (แสดงเมื่อเข้าเงื่อนไขความรุนแรงและการแพร่ระบาดสูง) -->
+          <div class="domain-pill-item clickable" id="pillItem_d5_2" style="display: none;" onclick="window.scrollToQuestionCard('card_q5_2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.2">
+            <span>5.2 ระบบสุขภาพล่ม:</span>
+            <span class="domain-pill-status" id="pill-d5_2">-</span>
           </div>
         </div>
 

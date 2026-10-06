@@ -77,53 +77,141 @@ const RISK_ACTIONS = {
 };
 
 /**
+/**
+ * หาข้อที่ยังขาดการประเมินตามเส้นทาง Decision Tree ของ WHO IRA
+ * @param {Object} answers - วัตถุเก็บคำตอบคำถามหลัก
+ * @returns {Array<Object>} รายการข้อที่ยังขาด [{ cardId, code, title, desc }]
+ */
+function getMissingAssessments(answers) {
+  const missing = [];
+  if (!answers) return missing;
+
+  // 1. ข้อ 1: ภัยคุกคามสูง (High Threat Hazard)
+  if (!answers.q1_highThreat) {
+    missing.push({
+      cardId: 'card_q1',
+      code: 'ข้อ 1',
+      title: '1. ภัยคุกคามสูง (High Threat Hazard)',
+      desc: 'โปรดระบุว่าเป็นเชื้อหรือโรคติดต่ออันตรายหรือไม่'
+    });
+    return missing;
+  }
+
+  // 2. ถ้าข้อ 1 = Yes (Priority Rule: ข้าม 2, 3, 4 ไปยังข้อ 5.1 ทันที)
+  if (answers.q1_highThreat === 'yes') {
+    if (!answers.q5_1_capacitySufficient) {
+      missing.push({
+        cardId: 'card_q5_1',
+        code: 'ข้อ 5.1',
+        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
+      });
+    }
+    return missing;
+  }
+
+  // 3. ถ้าข้อ 1 = No หรือ Unk
+  // ต้องตอบข้อ 2 (การสัมผัส)
+  if (!answers.q2_exposureActive) {
+    missing.push({
+      cardId: 'card_q2',
+      code: 'ข้อ 2',
+      title: '2. การสัมผัสโรค (Exposure Assessment)',
+      desc: 'ประเมินว่าประชาชนยังคงมีการสัมผัสหรือมีโอกาสสัมผัสต่อเนื่องหรือไม่'
+    });
+    return missing;
+  }
+
+  // 3.1 กรณี ข้อ 2 = No (ไม่มีการสัมผัสแล้ว)
+  if (answers.q2_exposureActive === 'no') {
+    if (!answers.q4_2_significantCurrent) {
+      missing.push({
+        cardId: 'card_q4_2',
+        code: 'ข้อ 4.2',
+        title: '4.2 ผลกระทบต่อเนื่องที่ยังคงมีอยู่',
+        desc: 'ประเมินว่ามีผู้ได้รับผลกระทบเป็นจำนวนมากในปัจจุบันหรือไม่'
+      });
+    } else if (answers.q4_2_significantCurrent === 'yes') {
+      if (!answers.q5_1_capacitySufficient) {
+        missing.push({
+          cardId: 'card_q5_1',
+          code: 'ข้อ 5.1',
+          title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+          desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
+        });
+      }
+    }
+    return missing;
+  }
+
+  // 3.2 กรณี ข้อ 2 = Yes หรือ Unk (มีการสัมผัสต่อเนื่อง)
+  // ต้องตอบข้อ 3 (ความรุนแรง) และ ข้อ 4.1 (การแพร่ระบาด)
+  if (!answers.q3_severityHigh) {
+    missing.push({
+      cardId: 'card_q3',
+      code: 'ข้อ 3',
+      title: '3. ความรุนแรงของโรค (Severity Assessment)',
+      desc: 'ประเมินอัตราป่วยตาย (CFR) หรือสัดส่วนผู้ป่วยวิกฤต'
+    });
+  }
+  if (!answers.q4_spreadFuture) {
+    missing.push({
+      cardId: 'card_q4_1',
+      code: 'ข้อ 4.1',
+      title: '4.1 การแพร่ระบาดในอนาคต (Future Spread)',
+      desc: 'ประเมินแนวโน้มการแพร่ระบาดขยายวงกว้าง'
+    });
+  }
+
+  // หากข้อ 3 หรือ 4.1 ยังตอบไม่ครบ ให้หยุดรอจนกว่าจะตอบครบ
+  if (!answers.q3_severityHigh || !answers.q4_spreadFuture) {
+    return missing;
+  }
+
+  // เมื่อตอบทั้งข้อ 3 และ 4.1 แล้ว -> ตรวจสอบว่าต้องตอบข้อ 5.2 (ระบบล่ม) หรือไม่
+  const isSevere = answers.q3_severityHigh !== 'no';
+  const isSpread = answers.q4_spreadFuture !== 'no';
+
+  if (isSevere && isSpread) {
+    // ต้องตอบทั้ง 5.2 (ระบบล่ม) และ 5.1 (ศักยภาพระบบ)
+    if (!answers.q5_2_systemOverwhelmed) {
+      missing.push({
+        cardId: 'card_q5_2',
+        code: 'ข้อ 5.2',
+        title: '5.2 การล่มของระบบสุขภาพ (Overwhelmed Healthcare System)',
+        desc: 'ประเมินว่าระบบบริการสุขภาพและเตียง ICU มีแนวโน้มจะเกินกำลังหรือไม่'
+      });
+    }
+    if (!answers.q5_1_capacitySufficient) {
+      missing.push({
+        cardId: 'card_q5_1',
+        code: 'ข้อ 5.1',
+        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
+      });
+    }
+  } else {
+    // ต้องการเพียงข้อ 5.1 (ศักยภาพระบบ)
+    if (!answers.q5_1_capacitySufficient) {
+      missing.push({
+        cardId: 'card_q5_1',
+        code: 'ข้อ 5.1',
+        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
+      });
+    }
+  }
+
+  return missing;
+}
+
+/**
  * ตรวจสอบว่าผู้ใช้ตอบคำถามครบตามเส้นทางของ Decision Tree แล้วหรือยัง
  * @param {Object} answers - วัตถุเก็บคำตอบคำถามหลัก
  * @returns {boolean} true เมื่อตอบครบเงื่อนไขของเส้นทางนั้นๆ
  */
 function isAssessmentComplete(answers) {
-  if (!answers || !answers.q1_highThreat) {
-    return false;
-  }
-
-  // เส้นทางที่ 1: High Threat Hazard = YES (Priority Rule)
-  // ต้องการเพียง ข้อ 1 และ ข้อ 5.1 (ศักยภาพระบบ)
-  if (answers.q1_highThreat === 'yes') {
-    return !!answers.q5_1_capacitySufficient;
-  }
-
-  // เส้นทางที่ 2: High Threat = NO หรือ UNK
-  // ต้องตอบข้อ 2 (การสัมผัส) เสมอ
-  if (!answers.q2_exposureActive) {
-    return false;
-  }
-
-  // 2.1 ไม่มีการสัมผัสแล้ว (Exposure = NO)
-  if (answers.q2_exposureActive === 'no') {
-    if (!answers.q4_2_significantCurrent) return false;
-    // ถ้าผลกระทบไม่มาก -> สิ้นสุดทันที (Very Low)
-    if (answers.q4_2_significantCurrent === 'no') return true;
-    // ถ้าผลกระทบมาก -> ต้องตอบข้อ 5.1
-    return !!answers.q5_1_capacitySufficient;
-  }
-
-  // 2.2 มีการสัมผัสต่อเนื่อง (Exposure = YES หรือ UNK)
-  // ต้องตอบข้อ 3 (ความรุนแรง) และ ข้อ 4.1 (การแพร่ระบาด)
-  if (!answers.q3_severityHigh || !answers.q4_spreadFuture) {
-    return false;
-  }
-
-  // กรณีความรุนแรงสูง และ การแพร่ระบาดสูง
-  const isSevere = answers.q3_severityHigh !== 'no';
-  const isSpread = answers.q4_spreadFuture !== 'no';
-
-  if (isSevere && isSpread) {
-    // ต้องตอบข้อ 5.2 (ระบบล่ม) และ ข้อ 5.1 (ศักยภาพ)
-    return !!answers.q5_2_systemOverwhelmed && !!answers.q5_1_capacitySufficient;
-  }
-
-  // กรณีอื่นๆ ต้องการข้อ 5.1 (ศักยภาพ)
-  return !!answers.q5_1_capacitySufficient;
+  return getMissingAssessments(answers).length === 0;
 }
 
 // ==============================================================================
@@ -334,7 +422,8 @@ function evaluateRiskAlgorithm(state) {
   updateDynamicFlow(state);
 
   // ตรวจสอบความครบถ้วนของการประเมิน
-  const isComplete = isAssessmentComplete(answers);
+  const missingList = getMissingAssessments(answers);
+  const isComplete = missingList.length === 0;
 
   if (!isComplete) {
     const incompleteConf = RISK_ACTIONS['Incomplete'];
@@ -344,6 +433,7 @@ function evaluateRiskAlgorithm(state) {
       colorClass: incompleteConf.class,
       suggestedActions: incompleteConf.actions,
       rationaleBreakdown: {},
+      missingList: missingList,
       isComplete: false
     };
     updateRiskDisplay(state);
@@ -457,6 +547,7 @@ function evaluateRiskAlgorithm(state) {
     colorClass: conf.class,
     suggestedActions: conf.actions,
     rationaleBreakdown: rationale,
+    missingList: [],
     isComplete: true
   };
 
@@ -482,6 +573,7 @@ function updateRiskDisplay(state) {
   const focalBox = getDom('verdictFocalBox');
   const focalText = getDom('verdictFocalText');
   const actionsList = getDom('suggestedActionsList');
+  const missingBox = getDom('missingAssessmentsBox');
 
   // 1. อัปเดตการแสดงผล ประเด็นที่ประเมิน (Focal Issue)
   if (focalBox && focalText) {
@@ -516,13 +608,42 @@ function updateRiskDisplay(state) {
     textLevelEn.textContent = result.level === 'Incomplete' ? 'INCOMPLETE ASSESSMENT' : `${result.level.toUpperCase()} RISK`;
   }
 
-  // 4. แสดงคำอธิบาย Rationale & Drivers
+  // 4. แสดงคำอธิบาย Rationale & Drivers และ Missing Assessments Box
+  if (missingBox) {
+    if (!result.isComplete && result.missingList && result.missingList.length > 0) {
+      missingBox.style.display = 'block';
+      const itemsHtml = result.missingList.map(item => `
+        <div class="missing-eval-item" onclick="window.scrollToQuestionCard('${item.cardId}')" title="คลิกเพื่อไปตอบข้อนี้">
+          <div class="missing-item-main">
+            <span class="missing-item-code">⚠️ ยังไม่ได้ประเมิน: ${item.title}</span>
+            <span class="missing-item-desc">${item.desc}</span>
+          </div>
+          <button type="button" class="btn-missing-goto" onclick="event.stopPropagation(); window.scrollToQuestionCard('${item.cardId}')">
+            ไปตอบข้อนี้ ↗
+          </button>
+        </div>
+      `).join('');
+
+      missingBox.innerHTML = `
+        <div class="missing-eval-header">
+          <span>⚠️ ยังประเมินไม่ครบถ้วน (ขาดอีก ${result.missingList.length} ข้อ):</span>
+        </div>
+        <div class="missing-eval-list">
+          ${itemsHtml}
+        </div>
+      `;
+    } else {
+      missingBox.style.display = 'none';
+      missingBox.innerHTML = '';
+    }
+  }
+
   if (verdictDesc && verdictDrivers) {
     if (!result.isComplete) {
       verdictDesc.textContent = 'โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงและมาตรการตามเกณฑ์ WHO IRA';
       verdictDrivers.innerHTML = `
         <div style="font-size: 0.82rem; color: #64748b; margin-top: 6px;">
-          📍 สถานะปัจจุบัน: กำลังตอบคำถามตาม Decision Tree
+          📍 สถานะปัจจุบัน: ยังตอบไม่ครบตาม Decision Tree (โปรดดูรายการข้อที่ต้องตอบด้านบน)
         </div>
       `;
     } else {
@@ -557,12 +678,8 @@ function updateRiskDisplay(state) {
     `).join('');
   }
 
-  // 6. อัปเดต Domain Status Pills (1-5)
-  updateDomainPill('pill-d1', answers.q1_highThreat);
-  updateDomainPill('pill-d2', answers.q1_highThreat === 'yes' ? 'skip' : answers.q2_exposureActive);
-  updateDomainPill('pill-d3', answers.q1_highThreat === 'yes' || answers.q2_exposureActive === 'no' ? 'skip' : answers.q3_severityHigh);
-  updateDomainPill('pill-d4', answers.q1_highThreat === 'yes' ? 'skip' : (answers.q2_exposureActive === 'no' ? answers.q4_2_significantCurrent : answers.q4_spreadFuture));
-  updateDomainPill('pill-d5', answers.q1_highThreat === 'yes' ? answers.q5_1_capacitySufficient : (answers.q2_exposureActive === 'no' && answers.q4_2_significantCurrent === 'no' ? 'skip' : answers.q5_1_capacitySufficient));
+  // 6. อัปเดต Domain Status Pills (1-5 และ 5.2)
+  updateDomainPillsStatus(state);
 
   // 7. อัปเดต Mobile Badges & Floating Summary Bar
   const mobBadge = getDom('mobileRiskBadge');
@@ -574,6 +691,112 @@ function updateRiskDisplay(state) {
   if (mobFloatText) {
     mobFloatText.textContent = `ความเสี่ยง: ${result.levelTh}`;
     mobFloatText.className = `mobile-floating-badge ${result.colorClass}`;
+  }
+}
+
+/**
+ * อัปเดตสรุปผลรายมิติ (Domain Pills 1-5 และ 5.2) อย่างสอดคล้องกับ Decision Tree
+ * @param {Object} state - Application State
+ */
+function updateDomainPillsStatus(state) {
+  const answers = state.answers || {};
+
+  const pillItemD5_2 = getDom('pillItem_d5_2');
+  const labelPillD4 = getDom('label-pill-d4');
+  const labelPillD5 = getDom('label-pill-d5');
+
+  // ข้อ 1: ภัยคุกคามสูง
+  updateDomainPill('pill-d1', answers.q1_highThreat || 'missing');
+
+  if (!answers.q1_highThreat) {
+    // ยังไม่ตอบข้อ 1 -> ข้อ 2-5 ยังไม่ถึงคิว
+    updateDomainPill('pill-d2', '-');
+    updateDomainPill('pill-d3', '-');
+    updateDomainPill('pill-d4', '-');
+    updateDomainPill('pill-d5', '-');
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
+    if (labelPillD4) labelPillD4.textContent = '4. การแพร่กระจาย:';
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    return;
+  }
+
+  // เส้นทาง 1: High Threat = Yes
+  if (answers.q1_highThreat === 'yes') {
+    updateDomainPill('pill-d2', 'skip');
+    updateDomainPill('pill-d3', 'skip');
+    updateDomainPill('pill-d4', 'skip');
+    updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
+    if (labelPillD4) labelPillD4.textContent = '4. การแพร่กระจาย:';
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    return;
+  }
+
+  // เส้นทาง 2: High Threat = No / Unk
+  updateDomainPill('pill-d2', answers.q2_exposureActive || 'missing');
+
+  if (!answers.q2_exposureActive) {
+    // ยังไม่ตอบข้อ 2
+    updateDomainPill('pill-d3', '-');
+    updateDomainPill('pill-d4', '-');
+    updateDomainPill('pill-d5', '-');
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
+    if (labelPillD4) labelPillD4.textContent = '4. การแพร่กระจาย:';
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    return;
+  }
+
+  // เส้นทาง 2.1: Exposure = No
+  if (answers.q2_exposureActive === 'no') {
+    updateDomainPill('pill-d3', 'skip');
+    if (labelPillD4) labelPillD4.textContent = '4.2 ขนาดผลกระทบ:';
+    updateDomainPill('pill-d4', answers.q4_2_significantCurrent || 'missing');
+
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+
+    if (!answers.q4_2_significantCurrent) {
+      updateDomainPill('pill-d5', '-');
+    } else if (answers.q4_2_significantCurrent === 'yes') {
+      updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
+    } else {
+      // No -> Very Low สิ้นสุด ไม่ต้องประเมิน 5
+      updateDomainPill('pill-d5', 'skip');
+    }
+    return;
+  }
+
+  // เส้นทาง 2.2: Exposure = Yes / Unk
+  if (labelPillD4) labelPillD4.textContent = '4. การแพร่กระจาย:';
+  updateDomainPill('pill-d3', answers.q3_severityHigh || 'missing');
+  updateDomainPill('pill-d4', answers.q4_spreadFuture || 'missing');
+
+  // ตรวจสอบว่าตอบ 3 และ 4 หรือยัง
+  if (!answers.q3_severityHigh || !answers.q4_spreadFuture) {
+    // ยังไม่ตอบ 3 หรือ 4 ครบ
+    updateDomainPill('pill-d5', '-');
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    return;
+  }
+
+  const severityHigh = answers.q3_severityHigh !== 'no';
+  const spreadHigh = answers.q4_spreadFuture !== 'no';
+
+  if (severityHigh && spreadHigh) {
+    // กิ่งนี้ต้องประเมินทั้ง 5.2 และ 5.1
+    if (labelPillD5) labelPillD5.textContent = '5.1 ศักยภาพระบบ:';
+    updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
+
+    if (pillItemD5_2) {
+      pillItemD5_2.style.display = 'flex';
+      updateDomainPill('pill-d5_2', answers.q5_2_systemOverwhelmed || 'missing');
+    }
+  } else {
+    // กิ่งนี้ต้องการแค่ 5.1
+    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
+    if (pillItemD5_2) pillItemD5_2.style.display = 'none';
   }
 }
 
@@ -596,6 +819,9 @@ function updateDomainPill(elId, val) {
   } else if (val === 'skip') {
     el.textContent = 'ข้าม (N/A)';
     el.className = 'domain-pill-status pill-skip';
+  } else if (val === 'missing') {
+    el.textContent = '⚠️ รอประเมิน';
+    el.className = 'domain-pill-status pill-missing';
   } else {
     el.textContent = '-';
     el.className = 'domain-pill-status';
