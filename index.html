@@ -35,7 +35,8 @@
         <button id="btnPresetWuhan" class="btn btn-outline btn-sm" title="โหลดข้อมูลกรณีศึกษาตัวอย่าง">
           🧪 <span class="btn-text-desktop">ตัวอย่างเคสอู่ฮั่น</span><span class="btn-text-mobile">ตัวอย่าง</span>
         </button>
-        <a id="btnDocRef" href="Risk_Assessment_Reference_DDC.pdf" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" title="เปิดเอกสารอ้างอิงแนวทางการประเมินความเสี่ยง กรมควบคุมโรค (PDF)">
+        <a id="btnDocRef" href="Risk_Assessment_Reference_DDC.pdf" target="_blank" rel="noopener noreferrer"
+          class="btn btn-outline btn-sm" title="เปิดเอกสารอ้างอิงแนวทางการประเมินความเสี่ยง กรมควบคุมโรค (PDF)">
           📖 <span class="btn-text-desktop">เอกสารอ้างอิง DDC</span><span class="btn-text-mobile">อ้างอิง</span>
         </a>
         <button id="btnOpenSettings" class="btn btn-secondary btn-sm" title="ตั้งค่า Typhoon AI และ Google Sheets">
@@ -104,7 +105,8 @@
             placeholder="ระบุจำนวนผู้ป่วย, อาการเด่น, การตรวจพบเบื้องต้น, ประวัติการสัมผัส..."></textarea>
         </div>
         <div class="form-group" style="margin-top: 12px;">
-          <label for="riskQuestion">ประเด็น / คำถามที่ต้องการประเมินความเสี่ยง (Risk Assessment Question / Focal Issue) *</label>
+          <label for="riskQuestion">ประเด็น / คำถามที่ต้องการประเมินความเสี่ยง (Risk Assessment Question / Focal Issue)
+            *</label>
           <textarea id="riskQuestion" class="form-control" rows="2"
             placeholder="เช่น ความเสี่ยงต่อการแพร่กระจายของเชื้อในชุมชนและบุคลากรทางการแพทย์ในจังหวัดเชียงใหม่ ในช่วง 2 สัปดาห์ข้างหน้า..."></textarea>
         </div>
@@ -139,7 +141,7 @@
 
           <div class="question-block">
             <div class="q-label">
-              <span>เหตุการณ์นี้เกี่ยวข้องกับเชื้อโรคที่เป็นภัยคุกคามระดับสูงหรือไม่?</span>
+              <span>เหตุการณ์นี้เกี่ยวข้องกับโรค/ภัยสุขภาพ ที่เป็นภัยคุกคามระดับสูง ในพื้นที่ของท่านหรือไม่?</span>
               <button type="button" class="btn-subdrawer-toggle" onclick="toggleSubDrawer('drawer_q1', this)">
                 <span class="btn-subdrawer-icon">📋</span>
                 <span class="drawer-btn-label" data-expand-text="ดูรายชื่อโรค / บันทึกข้อย่อย"
@@ -180,8 +182,8 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_1">
                     <label class="sub-choice-label" id="lbl_sub_d1_1_yes"><input type="radio" name="sub_d1_1"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d1_1_no"><input type="radio" name="sub_d1_1"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_1_no"><input type="radio" name="sub_d1_1" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d1_1" class="sub-criterion-input" rows="1"
@@ -194,8 +196,8 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_2">
                     <label class="sub-choice-label" id="lbl_sub_d1_2_yes"><input type="radio" name="sub_d1_2"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d1_2_no"><input type="radio" name="sub_d1_2"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_2_no"><input type="radio" name="sub_d1_2" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d1_2" class="sub-criterion-input" rows="1"
@@ -208,11 +210,12 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_3">
                     <label class="sub-choice-label" id="lbl_sub_d1_3_yes"><input type="radio" name="sub_d1_3"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d1_3_no"><input type="radio" name="sub_d1_3"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_3_no"><input type="radio" name="sub_d1_3" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <textarea id="note_d1_3" class="sub-criterion-input" rows="1" placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
+                <textarea id="note_d1_3" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
               </div>
 
               <div class="sub-criterion-item">
@@ -222,11 +225,12 @@
                   <div class="sub-choice-group" data-domain="q1" data-id="sub_d1_4">
                     <label class="sub-choice-label" id="lbl_sub_d1_4_yes"><input type="radio" name="sub_d1_4"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d1_4_no"><input type="radio" name="sub_d1_4"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d1_4_no"><input type="radio" name="sub_d1_4" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
-                <textarea id="note_d1_4" class="sub-criterion-input" rows="1" placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
+                <textarea id="note_d1_4" class="sub-criterion-input" rows="1"
+                  placeholder="ทดบันทึกเพิ่มเติม..."></textarea>
               </div>
             </div>
 
@@ -384,8 +388,8 @@
                   <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_a">
                     <label class="sub-choice-label" id="lbl_sub_d3_a_yes"><input type="radio" name="sub_d3_a"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d3_a_no"><input type="radio" name="sub_d3_a"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_a_no"><input type="radio" name="sub_d3_a" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d3_a" class="sub-criterion-input" rows="1"
@@ -414,8 +418,8 @@
                   <div class="sub-choice-group" data-domain="q3" data-id="sub_d3_c">
                     <label class="sub-choice-label" id="lbl_sub_d3_c_yes"><input type="radio" name="sub_d3_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d3_c_no"><input type="radio" name="sub_d3_c"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d3_c_no"><input type="radio" name="sub_d3_c" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d3_c" class="sub-criterion-input" rows="1"
@@ -508,8 +512,8 @@
                   <div class="sub-choice-group" data-domain="q4" data-id="sub_d4_c">
                     <label class="sub-choice-label" id="lbl_sub_d4_c_yes"><input type="radio" name="sub_d4_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d4_c_no"><input type="radio" name="sub_d4_c"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d4_c_no"><input type="radio" name="sub_d4_c" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d4_c" class="sub-criterion-input" rows="1"
@@ -651,8 +655,8 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_a">
                     <label class="sub-choice-label" id="lbl_sub_d5_a_yes"><input type="radio" name="sub_d5_a"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d5_a_no"><input type="radio" name="sub_d5_a"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_a_no"><input type="radio" name="sub_d5_a" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d5_a" class="sub-criterion-input" rows="1"
@@ -666,8 +670,8 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_b">
                     <label class="sub-choice-label" id="lbl_sub_d5_b_yes"><input type="radio" name="sub_d5_b"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d5_b_no"><input type="radio" name="sub_d5_b"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_b_no"><input type="radio" name="sub_d5_b" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d5_b" class="sub-criterion-input" rows="1"
@@ -681,8 +685,8 @@
                   <div class="sub-choice-group" data-domain="q5_1" data-id="sub_d5_c">
                     <label class="sub-choice-label" id="lbl_sub_d5_c_yes"><input type="radio" name="sub_d5_c"
                         value="yes"> ใช่ (Yes)</label>
-                    <label class="sub-choice-label" id="lbl_sub_d5_c_no"><input type="radio" name="sub_d5_c"
-                        value="no"> ไม่ใช่ (No)</label>
+                    <label class="sub-choice-label" id="lbl_sub_d5_c_no"><input type="radio" name="sub_d5_c" value="no">
+                      ไม่ใช่ (No)</label>
                   </div>
                 </div>
                 <textarea id="note_d5_c" class="sub-criterion-input" rows="1"
@@ -729,7 +733,8 @@
           </div>
           <div class="audit-header-actions">
             <button id="btnSyncAllPending" class="btn btn-warning btn-sm" style="display: none;"
-              title="ส่งข้อมูลที่ค้างอยู่ในเครื่องขึ้น Google Sheet ทั้งหมด">⚡ ซิงก์ที่ค้าง (<span id="pendingSyncCount">0</span>)</button>
+              title="ส่งข้อมูลที่ค้างอยู่ในเครื่องขึ้น Google Sheet ทั้งหมด">⚡ ซิงก์ที่ค้าง (<span
+                id="pendingSyncCount">0</span>)</button>
             <button id="btnConnectSheetFromAudit" class="btn btn-primary btn-sm">🔗 เชื่อมต่อชีต</button>
             <button id="btnPullSheetEvents" class="btn btn-outline btn-sm"
               title="ดึงข้อมูลประวัติและรหัสล่าสุดจาก Google Sheet มาอัปเดตที่เครื่องนี้">📥 ดึงจาก Sheet</button>
@@ -798,7 +803,8 @@
 
       <!-- Mobile Quick Back to Form Button (Visible on mobile only) -->
       <div class="mobile-only" style="margin-bottom: 12px;">
-        <button id="btnMobileBackToForm" class="btn btn-outline btn-sm" style="width: 100%; min-height: 44px; font-weight: 700; font-size: 0.9rem; background: #fff; border-color: rgba(225, 29, 72, 0.35); color: #be123c;">
+        <button id="btnMobileBackToForm" class="btn btn-outline btn-sm"
+          style="width: 100%; min-height: 44px; font-weight: 700; font-size: 0.9rem; background: #fff; border-color: rgba(225, 29, 72, 0.35); color: #be123c;">
           ⬅️ กลับไปแก้ไขแบบประเมิน (Edit Form)
         </button>
       </div>
@@ -814,7 +820,8 @@
 
         <!-- Explicit Clear Written Conclusion & Rationale Box -->
         <div class="risk-verdict-summary risk-incomplete" id="riskVerdictSummary">
-          <div class="verdict-focal-box" id="verdictFocalBox" style="display: none; margin-bottom: 8px; font-size: 0.82rem; background: rgba(225,29,72,0.06); border-radius: 6px; padding: 6px 10px; border-left: 3px solid var(--primary);">
+          <div class="verdict-focal-box" id="verdictFocalBox"
+            style="display: none; margin-bottom: 8px; font-size: 0.82rem; background: rgba(225,29,72,0.06); border-radius: 6px; padding: 6px 10px; border-left: 3px solid var(--primary);">
             <span style="font-weight: 700; color: #881337;">🎯 ประเด็นที่ประเมิน: </span>
             <span id="verdictFocalText" style="color: #334155;">-</span>
           </div>
@@ -823,7 +830,8 @@
             <strong>สรุปผลการประเมินและความหมาย:</strong>
           </div>
           <div class="verdict-desc" id="riskVerdictDesc">
-            โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงตามเกณฑ์ WHO IRA
+            โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงตามเกณฑ์ WHO
+            IRA
           </div>
           <!-- Missing Assessments Box: แสดงข้อที่ยังขาดการประเมินอย่างชัดเจน -->
           <div id="missingAssessmentsBox" class="missing-eval-box" style="display: none;"></div>
@@ -834,28 +842,34 @@
 
         <!-- 5 Domains Status Breakdown -->
         <div class="domain-pills" id="domainPillsContainer">
-          <div class="domain-pill-item clickable" id="pillItem_d1" onclick="window.scrollToQuestionCard('card_q1')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 1">
+          <div class="domain-pill-item clickable" id="pillItem_d1" onclick="window.scrollToQuestionCard('card_q1')"
+            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 1">
             <span>1. ภัยคุกคามสูง:</span>
             <span class="domain-pill-status" id="pill-d1">-</span>
           </div>
-          <div class="domain-pill-item clickable" id="pillItem_d2" onclick="window.scrollToQuestionCard('card_q2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 2">
+          <div class="domain-pill-item clickable" id="pillItem_d2" onclick="window.scrollToQuestionCard('card_q2')"
+            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 2">
             <span>2. การสัมผัส:</span>
             <span class="domain-pill-status" id="pill-d2">-</span>
           </div>
-          <div class="domain-pill-item clickable" id="pillItem_d3" onclick="window.scrollToQuestionCard('card_q3')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 3">
+          <div class="domain-pill-item clickable" id="pillItem_d3" onclick="window.scrollToQuestionCard('card_q3')"
+            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 3">
             <span>3. ความรุนแรง:</span>
             <span class="domain-pill-status" id="pill-d3">-</span>
           </div>
-          <div class="domain-pill-item clickable" id="pillItem_d4" onclick="window.scrollToQuestionCard(window.getCardIdForDomain4())" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 4">
+          <div class="domain-pill-item clickable" id="pillItem_d4"
+            onclick="window.scrollToQuestionCard(window.getCardIdForDomain4())" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 4">
             <span id="label-pill-d4">4. การแพร่กระจาย:</span>
             <span class="domain-pill-status" id="pill-d4">-</span>
           </div>
-          <div class="domain-pill-item clickable" id="pillItem_d5" onclick="window.scrollToQuestionCard('card_q5_1')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.1">
+          <div class="domain-pill-item clickable" id="pillItem_d5" onclick="window.scrollToQuestionCard('card_q5_1')"
+            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.1">
             <span id="label-pill-d5">5. ศักยภาพระบบ:</span>
             <span class="domain-pill-status" id="pill-d5">-</span>
           </div>
           <!-- 5.2 การล่มของระบบสุขภาพ (แสดงเมื่อเข้าเงื่อนไขความรุนแรงและการแพร่ระบาดสูง) -->
-          <div class="domain-pill-item clickable" id="pillItem_d5_2" style="display: none;" onclick="window.scrollToQuestionCard('card_q5_2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.2">
+          <div class="domain-pill-item clickable" id="pillItem_d5_2" style="display: none;"
+            onclick="window.scrollToQuestionCard('card_q5_2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.2">
             <span>5.2 ระบบสุขภาพล่ม:</span>
             <span class="domain-pill-status" id="pill-d5_2">-</span>
           </div>
@@ -875,7 +889,8 @@
         <div class="card-title-row">
           <h3>🌪️ Typhoon AI สรุปรายงาน</h3>
           <div style="display: flex; gap: 6px;">
-            <button id="btnPromptCustomizeShortcut" class="btn btn-outline btn-sm" title="ตั้งค่าและปรับแต่งคำสั่ง Prompt สำหรับ AI">✍️ ปรับแต่ง Prompt</button>
+            <button id="btnPromptCustomizeShortcut" class="btn btn-outline btn-sm"
+              title="ตั้งค่าและปรับแต่งคำสั่ง Prompt สำหรับ AI">✍️ ปรับแต่ง Prompt</button>
             <button id="btnCopyAi" class="btn btn-outline btn-sm" title="คัดลอกข้อความ">📋 คัดลอก</button>
           </div>
         </div>
@@ -930,7 +945,8 @@
 
         <!-- Settings Sub-Tabs Navigation -->
         <div class="settings-tab-nav">
-          <button type="button" class="btn-settings-tab active" id="tabBtnSettingsGeneral">🔌 การเชื่อมต่อ API & Sheets</button>
+          <button type="button" class="btn-settings-tab active" id="tabBtnSettingsGeneral">🔌 การเชื่อมต่อ API &
+            Sheets</button>
           <button type="button" class="btn-settings-tab" id="tabBtnSettingsPrompt">✍️ ปรับแต่ง Prompt ของ AI</button>
         </div>
 
@@ -938,7 +954,8 @@
         <div id="settingsPaneGeneral">
           <div class="form-group">
             <label for="settingTyphoonApiKey">Typhoon AI API Key</label>
-            <input type="password" id="settingTyphoonApiKey" class="form-control" placeholder="typhoon-xxxxxxxxxxxxxxxx">
+            <input type="password" id="settingTyphoonApiKey" class="form-control"
+              placeholder="typhoon-xxxxxxxxxxxxxxxx">
             <small style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
                 target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่าง
               ระบบจะใช้โหมดจำลอง)</small>
@@ -981,50 +998,76 @@
 
         <!-- Tab 2: Prompt Customization Pane -->
         <div id="settingsPanePrompt" style="display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
             <div>
               <strong style="color: #881337; font-size: 0.92rem;">เลือกเทมเพลตมาตรฐาน (Prompt Presets):</strong>
-              <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">คลิกเลือกแม่แบบสำเร็จรูป หรือพิมพ์ปรับแต่งข้อความด้านล่างได้เอง 100%</div>
+              <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">คลิกเลือกแม่แบบสำเร็จรูป
+                หรือพิมพ์ปรับแต่งข้อความด้านล่างได้เอง 100%</div>
             </div>
-            <button type="button" id="btnResetPromptDefault" class="btn btn-outline-danger btn-sm" style="font-size: 0.76rem; padding: 4px 10px;" title="ล้างการปรับแต่งและคืนค่ามาตรฐาน">
+            <button type="button" id="btnResetPromptDefault" class="btn btn-outline-danger btn-sm"
+              style="font-size: 0.76rem; padding: 4px 10px;" title="ล้างการปรับแต่งและคืนค่ามาตรฐาน">
               🔄 คืนค่าเริ่มต้น (Reset)
             </button>
           </div>
 
           <!-- Preset Selector Buttons -->
           <div class="prompt-preset-buttons" style="margin-bottom: 14px;">
-            <button type="button" class="btn-preset-select active" data-preset="who_standard">📘 มาตรฐาน WHO IRA (3 ย่อหน้า)</button>
-            <button type="button" class="btn-preset-select" data-preset="executive_brief">📗 สรุปด่วนผู้บริหาร (Executive)</button>
-            <button type="button" class="btn-preset-select" data-preset="epidemiology_investigation">📙 เชิงลึกสอบสวนโรค</button>
+            <button type="button" class="btn-preset-select active" data-preset="who_standard">📘 มาตรฐาน WHO IRA (3
+              ย่อหน้า)</button>
+            <button type="button" class="btn-preset-select" data-preset="executive_brief">📗 สรุปด่วนผู้บริหาร
+              (Executive)</button>
+            <button type="button" class="btn-preset-select" data-preset="epidemiology_investigation">📙
+              เชิงลึกสอบสวนโรค</button>
             <button type="button" class="btn-preset-select" data-preset="custom">⚙️ กำหนดเอง (Custom)</button>
           </div>
 
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label for="settingCustomSystemPrompt" style="font-weight: 700; color: #1e293b; margin: 0; font-size: 0.85rem;">1. System Prompt (บทบาท & โครงสร้างรายงาน):</label>
+              <label for="settingCustomSystemPrompt"
+                style="font-weight: 700; color: #1e293b; margin: 0; font-size: 0.85rem;">1. System Prompt (บทบาท &
+                โครงสร้างรายงาน):</label>
               <span id="promptCharCount" style="font-size: 0.74rem; color: #64748b;">0 ตัวอักษร</span>
             </div>
-            <textarea id="settingCustomSystemPrompt" class="form-control" rows="8" style="font-family: Consolas, monospace; font-size: 0.82rem; line-height: 1.5; resize: vertical;" placeholder="พิมพ์หรือปรับแต่งคำสั่ง System Prompt สำหรับกำหนดบทบาทและแนวทางการเขียนของ AI..."></textarea>
-            <small style="color: #64748b; font-size: 0.75rem;">กำหนดว่าให้ AI สวมบทบาทอะไร, โครงสร้างย่อหน้า, ภาษา และกฎการตัดข้อมูลข้อย่อยที่ขัดแย้ง</small>
+            <textarea id="settingCustomSystemPrompt" class="form-control" rows="8"
+              style="font-family: Consolas, monospace; font-size: 0.82rem; line-height: 1.5; resize: vertical;"
+              placeholder="พิมพ์หรือปรับแต่งคำสั่ง System Prompt สำหรับกำหนดบทบาทและแนวทางการเขียนของ AI..."></textarea>
+            <small style="color: #64748b; font-size: 0.75rem;">กำหนดว่าให้ AI สวมบทบาทอะไร, โครงสร้างย่อหน้า, ภาษา
+              และกฎการตัดข้อมูลข้อย่อยที่ขัดแย้ง</small>
           </div>
 
           <div class="form-group" style="margin-top: 14px;">
-            <label for="settingCustomDirectives" style="font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 0.85rem;">2. คำสั่งและข้อกำหนดพิเศษเพิ่มเติม (Custom Directives):</label>
-            <textarea id="settingCustomDirectives" class="form-control" rows="2" style="font-size: 0.84rem; resize: vertical;" placeholder="เช่น เน้นข้อเสนอแนะสำหรับพื้นที่ สคร.1 เชียงใหม่, เน้นกลุ่มเสี่ยงผู้สูงอายุ, ไม่ต้องระบุชื่อโรงพยาบาล..."></textarea>
-            <small style="color: #64748b; font-size: 0.75rem;">คำสั่งเฉพาะกิจนี้จะถูกผนวกเข้ากับ User Prompt เสมอในทุกครั้งที่สั่งให้ AI ประมวลผล</small>
+            <label for="settingCustomDirectives"
+              style="font-weight: 700; color: #1e293b; margin-bottom: 4px; font-size: 0.85rem;">2.
+              คำสั่งและข้อกำหนดพิเศษเพิ่มเติม (Custom Directives):</label>
+            <textarea id="settingCustomDirectives" class="form-control" rows="2"
+              style="font-size: 0.84rem; resize: vertical;"
+              placeholder="เช่น เน้นข้อเสนอแนะสำหรับพื้นที่ สคร.1 เชียงใหม่, เน้นกลุ่มเสี่ยงผู้สูงอายุ, ไม่ต้องระบุชื่อโรงพยาบาล..."></textarea>
+            <small style="color: #64748b; font-size: 0.75rem;">คำสั่งเฉพาะกิจนี้จะถูกผนวกเข้ากับ User Prompt
+              เสมอในทุกครั้งที่สั่งให้ AI ประมวลผล</small>
           </div>
 
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 12px;">
-            <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">🏷️ คลิกเพื่อคัดลอกตัวแปรที่ระบบส่งให้ AI อัตโนมัติ:</div>
+          <div
+            style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 12px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">🏷️
+              คลิกเพื่อคัดลอกตัวแปรที่ระบบส่งให้ AI อัตโนมัติ:</div>
             <div style="display: flex; flex-wrap: wrap; gap: 5px;" id="promptVarTagsContainer">
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ชื่อเหตุการณ์" data-tag="{{eventName}}">{{eventName}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: พื้นที่เกิดเหตุ" data-tag="{{location}}">{{location}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: วันที่ประเมิน" data-tag="{{assessmentDate}}">{{assessmentDate}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ประเด็นที่ประเมิน" data-tag="{{riskQuestion}}">{{riskQuestion}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ข้อมูลอาการคลินิก" data-tag="{{clinicalDetails}}">{{clinicalDetails}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ผลระดับความเสี่ยง" data-tag="{{riskLevel}}">{{riskLevel}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: มาตรการที่แนะนำ" data-tag="{{suggestedActions}}">{{suggestedActions}}</span>
-              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: บันทึกย่อย 5 มิติ" data-tag="{{userNotes}}">{{userNotes}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ชื่อเหตุการณ์"
+                data-tag="{{eventName}}">{{eventName}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: พื้นที่เกิดเหตุ"
+                data-tag="{{location}}">{{location}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: วันที่ประเมิน"
+                data-tag="{{assessmentDate}}">{{assessmentDate}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ประเด็นที่ประเมิน"
+                data-tag="{{riskQuestion}}">{{riskQuestion}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ข้อมูลอาการคลินิก"
+                data-tag="{{clinicalDetails}}">{{clinicalDetails}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: ผลระดับความเสี่ยง"
+                data-tag="{{riskLevel}}">{{riskLevel}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: มาตรการที่แนะนำ"
+                data-tag="{{suggestedActions}}">{{suggestedActions}}</span>
+              <span class="prompt-var-tag" title="คลิกเพื่อแทรก: บันทึกย่อย 5 มิติ"
+                data-tag="{{userNotes}}">{{userNotes}}</span>
             </div>
           </div>
         </div>
@@ -1038,27 +1081,33 @@
 
   <!-- Audit Record Full Detail Modal -->
   <div class="modal-overlay" id="auditDetailModal">
-    <div class="modal-dialog" style="max-width: 760px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-dialog"
+      style="max-width: 760px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="modal-header" style="background: #fff1f2; border-bottom: 1.5px solid rgba(225, 29, 72, 0.2);">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 1.35rem;">📋</span>
           <div>
-            <h3 style="margin: 0; font-size: 1.08rem; color: #881337;" id="detailModalTitle">รายละเอียดบันทึกเหตุการณ์</h3>
-            <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;" id="detailModalSubtitle">รหัสการประเมิน: -</div>
+            <h3 style="margin: 0; font-size: 1.08rem; color: #881337;" id="detailModalTitle">รายละเอียดบันทึกเหตุการณ์
+            </h3>
+            <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;" id="detailModalSubtitle">รหัสการประเมิน: -
+            </div>
           </div>
         </div>
         <button class="modal-close-btn" id="btnCloseAuditDetailModal">&times;</button>
       </div>
 
-      <div class="modal-body" id="auditDetailModalBody" style="overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; max-height: calc(90vh - 130px);">
+      <div class="modal-body" id="auditDetailModalBody"
+        style="overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; max-height: calc(90vh - 130px);">
         <!-- Populated dynamically by window.viewAuditDetail(id) -->
       </div>
 
-      <div class="modal-footer" style="background: #fff5f7; border-top: 1px solid rgba(225, 29, 72, 0.15); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <div class="modal-footer"
+        style="background: #fff5f7; border-top: 1px solid rgba(225, 29, 72, 0.15); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
         <button type="button" id="btnCopyDetailSummary" class="btn btn-outline btn-sm">📋 คัดลอกสรุปข้อความ</button>
         <div style="display: flex; gap: 8px;">
           <button type="button" id="btnCloseDetailFooter" class="btn btn-outline btn-sm">ปิด</button>
-          <button type="button" id="btnLoadDetailToForm" class="btn btn-primary btn-sm">✏️ โหลดขึ้นมาแก้ไขในแบบประเมิน</button>
+          <button type="button" id="btnLoadDetailToForm" class="btn btn-primary btn-sm">✏️
+            โหลดขึ้นมาแก้ไขในแบบประเมิน</button>
         </div>
       </div>
     </div>
