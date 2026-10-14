@@ -884,10 +884,10 @@
         </div>
       </div>
 
-      <!-- Typhoon AI Narrative Summary Card -->
+      <!-- AI Narrative Summary Card -->
       <div class="glass-card ai-narrative-card">
         <div class="card-title-row">
-          <h3>🌪️ Typhoon AI สรุปรายงาน</h3>
+          <h3>🤖 รายงานสรุปสถานการณ์ด้วย AI</h3>
           <div style="display: flex; gap: 6px;">
             <button id="btnPromptCustomizeShortcut" class="btn btn-outline btn-sm"
               title="ตั้งค่าและปรับแต่งคำสั่ง Prompt สำหรับ AI">✍️ ปรับแต่ง Prompt</button>
@@ -896,22 +896,22 @@
         </div>
 
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
-          สร้างบทบรรยายสถานการณ์และข้อเสนอแนะเชิงระบาดวิทยาอัตโนมัติด้วยภาษาไทยที่เป็นทางการ
+          สร้างบทบรรยายสถานการณ์และข้อเสนอแนะเชิงระบาดวิทยาอัตโนมัติด้วยภาษาไทยที่เป็นทางการ (รองรับ Typhoon, OpenAI, DeepSeek และโมเดลอื่น ๆ)
         </p>
 
         <div class="ai-loading-spinner" id="aiSpinner">
           <div class="spinner"></div>
-          <span>Typhoon AI กำลังวิเคราะห์และเรียบเรียงรายงาน...</span>
+          <span id="aiSpinnerText">AI กำลังวิเคราะห์และเรียบเรียงรายงาน...</span>
         </div>
 
         <div class="ai-output-box" id="aiNarrativeBox" contenteditable="true" spellcheck="false">
-          กดปุ่ม "สร้างรายงานสรุปด้วย Typhoon AI" ด้านล่าง
+          กดปุ่ม "สร้างรายงานสรุปด้วย AI" ด้านล่าง
           เพื่อสร้างบทบรรยายสรุปสถานการณ์และข้อเสนอแนะทางการแพทย์ตามหลักระบาดวิทยา
         </div>
 
         <div style="margin-top: 14px; display: flex; gap: 8px;">
           <button id="btnGenerateAi" class="btn btn-primary" style="flex: 1;">
-            ✨ สร้างรายงานสรุปด้วย Typhoon AI
+            ✨ สร้างรายงานสรุปด้วย AI
           </button>
         </div>
       </div>
@@ -945,35 +945,66 @@
 
         <!-- Settings Sub-Tabs Navigation -->
         <div class="settings-tab-nav">
-          <button type="button" class="btn-settings-tab active" id="tabBtnSettingsGeneral">🔌 การเชื่อมต่อ API &
-            Sheets</button>
+          <button type="button" class="btn-settings-tab active" id="tabBtnSettingsGeneral">🔌 การเชื่อมต่อ AI API & Sheets</button>
           <button type="button" class="btn-settings-tab" id="tabBtnSettingsPrompt">✍️ ปรับแต่ง Prompt ของ AI</button>
         </div>
 
         <!-- Tab 1: General Settings Pane (API & Sheets) -->
         <div id="settingsPaneGeneral">
+          <!-- LLM Provider Selection -->
           <div class="form-group">
-            <label for="settingTyphoonApiKey">Typhoon AI API Key</label>
+            <label for="settingLlmProvider">ผู้ให้บริการ AI / LLM Provider</label>
+            <select id="settingLlmProvider" class="form-control">
+              <option value="opentyphoon" selected>🌪️ Typhoon AI (OpenTyphoon - ค่าเริ่มต้น / แนะนำภาษาไทย)</option>
+              <option value="openai">🤖 OpenAI (ChatGPT / GPT-4o)</option>
+              <option value="deepseek">🐋 DeepSeek API (V3 / R1)</option>
+              <option value="openrouter">🌐 OpenRouter (เข้าถึงได้ทุกโมเดล)</option>
+              <option value="groq">⚡ Groq (ประมวลผลเร็วพิเศษ)</option>
+              <option value="ollama">💻 Local LLM / Ollama (รันในเครื่อง)</option>
+              <option value="custom">⚙️ กำหนดผู้ให้บริการ / Endpoint เอง (OpenAI-compatible)</option>
+            </select>
+            <small style="color: #475569; font-size: 0.75rem;">เลือกผู้ให้บริการเพื่อตั้งค่า Endpoint และตัวเลือกโมเดลให้อัตโนมัติ</small>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="settingLlmApiUrl">API Endpoint URL</label>
+            <input type="url" id="settingLlmApiUrl" class="form-control"
+              placeholder="https://api.opentyphoon.ai/v1/chat/completions">
+            <small style="color: #475569; font-size: 0.75rem;">รองรับ Endpoint มาตรฐาน OpenAI Chat Completions Spec</small>
+          </div>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="settingTyphoonApiKey" id="lblLlmApiKey">API Key</label>
             <input type="password" id="settingTyphoonApiKey" class="form-control"
               placeholder="typhoon-xxxxxxxxxxxxxxxx">
-            <small style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
+            <small id="apiKeyHintText" style="color: #475569; font-size: 0.78rem;">รับ API Key ได้ที่ <a href="https://opentyphoon.ai"
                 target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่าง
               ระบบจะใช้โหมดจำลอง)</small>
           </div>
 
-          <div class="form-group" style="margin-top: 12px;">
-            <label for="settingTyphoonModel">โมเดล Typhoon (Model Name)</label>
+          <div class="form-group" style="margin-top: 10px;">
+            <label for="settingTyphoonModel">โมเดล (Model Selection)</label>
             <select id="settingTyphoonModel" class="form-control">
-              <option value="typhoon-v2.5-30b-a3b-instruct" selected>typhoon-v2.5-30b-a3b-instruct (แนะนำ - Flagship
-                ล่าสุด)</option>
+              <option value="typhoon-v2.5-30b-a3b-instruct" selected>typhoon-v2.5-30b-a3b-instruct (แนะนำ - Flagship ล่าสุด)</option>
               <option value="typhoon-v2.1-12b-instruct">typhoon-v2.1-12b-instruct (ประมวลผลเร็ว / 56k)</option>
               <option value="typhoon-v1.5-instruct">typhoon-v1.5-instruct (เวอร์ชันมาตรฐานเดิม)</option>
-              <option value="custom">-- ระบุชื่อโมเดลเอง (Custom Model) --</option>
+              <option value="custom">-- ✍️ ระบุชื่อโมเดลเอง (Custom Model Name) --</option>
             </select>
-            <input type="text" id="settingTyphoonModelCustom" class="form-control"
-              placeholder="พิมพ์ชื่อโมเดลอื่น ๆ เช่น typhoon-v2.5-..." style="display: none; margin-top: 6px;">
-            <small style="color: #475569; font-size: 0.75rem;">โมเดลที่แนะนำสำหรับ OpenTyphoon ปัจจุบันคือซีรีส์
-              2.5/2.1</small>
+
+            <!-- Custom Model Input Box: แสดงเมื่อเลือก Custom หรือพิมพ์ชื่อโมเดลเอง -->
+            <div id="customModelBox" style="display: none; margin-top: 8px; background: rgba(225, 29, 72, 0.04); border: 1.5px dashed var(--primary); border-radius: var(--radius-sm); padding: 10px 12px;">
+              <label for="settingTyphoonModelCustom" style="font-weight: 700; color: var(--primary-dark); font-size: 0.82rem; margin-bottom: 4px; display: block;">
+                🏷️ พิมพ์ชื่อโมเดลที่ต้องการใช้งาน (Model Identifier) *
+              </label>
+              <input type="text" id="settingTyphoonModelCustom" class="form-control"
+                placeholder="เช่น gpt-4o, deepseek-chat, mistral-large, llama-3.3-70b-versatile, qwen2.5:14b..."
+                style="background: #ffffff;">
+              <small style="color: #64748b; font-size: 0.74rem; display: block; margin-top: 4px;">
+                ใส่ชื่อ Model ID ให้ตรงกับที่ API ของผู้ให้บริการรองรับ
+              </small>
+            </div>
+
+            <small id="modelHintText" style="color: #475569; font-size: 0.75rem; display: block; margin-top: 4px;">เลือกจากรายการ หรือเลือก "ระบุชื่อโมเดลเอง" เพื่อพิมพ์ชื่อโมเดลใดก็ได้</small>
           </div>
 
           <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">

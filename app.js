@@ -24,6 +24,83 @@ window.addEventListener('unhandledrejection', (event) => {
   console.warn('[IRA Unhandled Promise Rejection]', event.reason);
 });
 
+// ตารางรายชื่อผู้ให้บริการ AI / LLM และการตั้งค่าพื้นฐาน
+const LLM_PROVIDERS = {
+  opentyphoon: {
+    name: 'Typhoon AI (OpenTyphoon)',
+    endpoint: 'https://api.opentyphoon.ai/v1/chat/completions',
+    keyPlaceholder: 'typhoon-xxxxxxxxxxxxxxxx',
+    keyHint: 'รับ API Key ได้ที่ <a href="https://opentyphoon.ai" target="_blank" style="color: var(--primary); font-weight: 600;">opentyphoon.ai</a> (หากเว้นว่างจะใช้โหมดจำลอง)',
+    models: [
+      { id: 'typhoon-v2.5-30b-a3b-instruct', name: 'typhoon-v2.5-30b-a3b-instruct (แนะนำ / ล่าสุด)' },
+      { id: 'typhoon-v2.1-12b-instruct', name: 'typhoon-v2.1-12b-instruct (ประมวลผลเร็ว)' },
+      { id: 'typhoon-v1.5-instruct', name: 'typhoon-v1.5-instruct (รุ่นเดิม)' }
+    ]
+  },
+  openai: {
+    name: 'OpenAI (ChatGPT)',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    keyPlaceholder: 'sk-proj-...',
+    keyHint: 'รับ API Key ได้ที่ <a href="https://platform.openai.com" target="_blank" style="color: var(--primary); font-weight: 600;">platform.openai.com</a>',
+    models: [
+      { id: 'gpt-4o', name: 'gpt-4o (โมเดลเรือธง แนะนำ)' },
+      { id: 'gpt-4o-mini', name: 'gpt-4o-mini (รวดเร็วและคุ้มค่า)' },
+      { id: 'o3-mini', name: 'o3-mini (Reasoning Model)' },
+      { id: 'gpt-4-turbo', name: 'gpt-4-turbo' }
+    ]
+  },
+  deepseek: {
+    name: 'DeepSeek API',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    keyPlaceholder: 'sk-...',
+    keyHint: 'รับ API Key ได้ที่ <a href="https://platform.deepseek.com" target="_blank" style="color: var(--primary); font-weight: 600;">platform.deepseek.com</a>',
+    models: [
+      { id: 'deepseek-chat', name: 'deepseek-chat (DeepSeek-V3 แนะนำ)' },
+      { id: 'deepseek-reasoner', name: 'deepseek-reasoner (DeepSeek-R1 คิดวิเคราะห์เชิงลึก)' }
+    ]
+  },
+  openrouter: {
+    name: 'OpenRouter',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    keyPlaceholder: 'sk-or-v1-...',
+    keyHint: 'รับ API Key ได้ที่ <a href="https://openrouter.ai" target="_blank" style="color: var(--primary); font-weight: 600;">openrouter.ai</a>',
+    models: [
+      { id: 'google/gemini-2.0-flash-001', name: 'google/gemini-2.0-flash-001 (แนะนำ / เร็ว)' },
+      { id: 'anthropic/claude-3.5-sonnet', name: 'anthropic/claude-3.5-sonnet' },
+      { id: 'meta-llama/llama-3.3-70b-instruct', name: 'meta-llama/llama-3.3-70b-instruct' },
+      { id: 'deepseek/deepseek-chat', name: 'deepseek/deepseek-chat' }
+    ]
+  },
+  groq: {
+    name: 'Groq (Fast Inference)',
+    endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    keyPlaceholder: 'gsk_...',
+    keyHint: 'รับ API Key ได้ที่ <a href="https://console.groq.com" target="_blank" style="color: var(--primary); font-weight: 600;">console.groq.com</a>',
+    models: [
+      { id: 'llama-3.3-70b-versatile', name: 'llama-3.3-70b-versatile (รวดเร็วมาก)' },
+      { id: 'mixtral-8x7b-32768', name: 'mixtral-8x7b-32768' }
+    ]
+  },
+  ollama: {
+    name: 'Ollama (Local LLM)',
+    endpoint: 'http://localhost:11434/v1/chat/completions',
+    keyPlaceholder: 'ollama (ไม่จำเป็นต้องใส่)',
+    keyHint: 'เรียกใช้งาน Ollama ในเครื่องผ่านพอร์ต 11434 (ตั้งค่า OLLAMA_ORIGINS="*" เพื่ออนุญาต Web App)',
+    models: [
+      { id: 'llama3.1', name: 'llama3.1' },
+      { id: 'qwen2.5:14b', name: 'qwen2.5:14b' },
+      { id: 'typhoon2', name: 'typhoon2' }
+    ]
+  },
+  custom: {
+    name: 'กำหนดเอง (Custom OpenAI-Compatible Endpoint)',
+    endpoint: '',
+    keyPlaceholder: 'ใส่ API Key ของ Endpoint ที่ใช้งาน...',
+    keyHint: 'ระบุ Base URL / Endpoint และ API Key ที่รองรับ OpenAI Chat Completions Spec',
+    models: []
+  }
+};
+
 // Application State
 const state = {
   currentAssessmentId: null, // Track currently active assessment ID (null = new case)
@@ -80,8 +157,11 @@ const state = {
   aiSummary: '',
   isAiGenerating: false,
   settings: {
-    typhoonApiKey: localStorage.getItem('ira_typhoon_api_key') || '',
-    typhoonModel: localStorage.getItem('ira_typhoon_model') || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct'),
+    llmProvider: localStorage.getItem('ira_llm_provider') || 'opentyphoon',
+    llmEndpoint: localStorage.getItem('ira_llm_endpoint') || 'https://api.opentyphoon.ai/v1/chat/completions',
+    typhoonApiKey: localStorage.getItem('ira_llm_api_key') || localStorage.getItem('ira_typhoon_api_key') || '',
+    typhoonModel: localStorage.getItem('ira_llm_model') || localStorage.getItem('ira_typhoon_model') || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct'),
+    customModelName: localStorage.getItem('ira_llm_model_custom') || '',
     googleSheetsUrl: localStorage.getItem('ira_google_sheets_url') || '',
     customSystemPrompt: localStorage.getItem('ira_custom_system_prompt') || '',
     customDirectives: localStorage.getItem('ira_custom_directives') || '',
@@ -347,7 +427,7 @@ function compileUserNotes() {
 }
 
 /**
- * เรียกใช้ Typhoon AI สรุปรายงานสถานการณ์
+ * เรียกใช้ AI (Typhoon, OpenAI, DeepSeek หรือ Custom Model) สรุปรายงานสถานการณ์
  */
 async function generateAiSummary() {
   // ตรวจสอบความครบถ้วนของการประเมินก่อน
@@ -356,9 +436,10 @@ async function generateAiSummary() {
     return;
   }
 
-  const apiKey = state.settings.typhoonApiKey.trim();
+  const apiKey = (state.settings.typhoonApiKey || '').trim();
   const summaryBox = document.getElementById('aiNarrativeBox');
   const spinner = document.getElementById('aiSpinner');
+  const spinnerText = document.getElementById('aiSpinnerText');
   const btn = document.getElementById('btnGenerateAi');
 
   if (state.isAiGenerating) return;
@@ -373,8 +454,19 @@ async function generateAiSummary() {
   const userDirectives = window.IraPrompts.getUserDirectives();
   const userPrompt = window.IraPrompts.buildUserPrompt(state.metadata, state.answers, state.assessmentResult, userNotesCompiled, userDirectives);
 
+  const providerKey = state.settings.llmProvider || 'opentyphoon';
+  const providerConf = LLM_PROVIDERS[providerKey] || LLM_PROVIDERS.opentyphoon;
+  const endpointToUse = (state.settings.llmEndpoint || providerConf.endpoint || 'https://api.opentyphoon.ai/v1/chat/completions').trim();
+
+  let modelToUse = state.settings.typhoonModel || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct');
+  if (modelToUse === 'custom' || !modelToUse) {
+    modelToUse = (state.settings.customModelName || '').trim();
+  }
+
+  const isLocalProvider = providerKey === 'ollama' || endpointToUse.includes('localhost') || endpointToUse.includes('127.0.0.1');
+
   try {
-    if (!apiKey) {
+    if (!apiKey && !isLocalProvider) {
       // โหมดจำลองเมื่อยังไม่มี API Key
       await new Promise(resolve => setTimeout(resolve, 1200));
       const simulatedText = window.IraPrompts.generateSimulatedSummary(
@@ -382,19 +474,34 @@ async function generateAiSummary() {
       );
       state.aiSummary = simulatedText;
       if (summaryBox) summaryBox.textContent = simulatedText;
-      showToast('สร้างรายงานจำลองสำเร็จ (ใส่ Typhoon API Key ในหน้าตั้งค่าเพื่อใช้โมเดลจริง)', 'warn');
+      showToast(`สร้างรายงานจำลองสำเร็จ (ใส่ API Key ในหน้าตั้งค่าเพื่อเรียกใช้โมเดล ${modelToUse || 'จริง'})`, 'warn');
     } else {
-      let modelToUse = state.settings.typhoonModel || window.IraPrompts.config.defaultModel;
+      if (!modelToUse) {
+        throw new Error('กรุณาระบุชื่อโมเดล (Model Name) ในหน้าต่างตั้งค่า');
+      }
+
+      if (spinnerText) {
+        spinnerText.textContent = `AI (${modelToUse}) กำลังประมวลผลและเรียบเรียงรายงาน...`;
+      }
+
       const fetchSignal = typeof AbortSignal !== 'undefined' && AbortSignal.timeout
         ? AbortSignal.timeout(window.IraPrompts.config.timeoutMs || 45000)
         : undefined;
 
-      let response = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
+      const requestHeaders = {
+        'Content-Type': 'application/json'
+      };
+      if (apiKey) {
+        requestHeaders['Authorization'] = `Bearer ${apiKey}`;
+      }
+      if (providerKey === 'openrouter') {
+        requestHeaders['HTTP-Referer'] = window.location.origin || 'https://github.com/tuituiman/Risk_Assessment_Tools';
+        requestHeaders['X-Title'] = 'IRA Assistant';
+      }
+
+      const response = await fetch(endpointToUse, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
+        headers: requestHeaders,
         body: JSON.stringify({
           model: modelToUse,
           messages: [
@@ -402,13 +509,13 @@ async function generateAiSummary() {
             { role: 'user', content: userPrompt }
           ],
           temperature: window.IraPrompts.config.temperature || 0.2,
-          max_tokens: window.IraPrompts.config.maxTokens || 1400
+          max_tokens: window.IraPrompts.config.maxTokens || 1500
         }),
         signal: fetchSignal
       });
 
       if (!response.ok) {
-        let errMessage = `${response.status} ${response.statusText}`;
+        let errMessage = `HTTP ${response.status} ${response.statusText}`;
         try {
           const errJson = await response.json();
           if (errJson && errJson.error) {
@@ -421,17 +528,17 @@ async function generateAiSummary() {
       const data = await response.json();
       const content = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
       if (!content) {
-        throw new Error('ไม่พบข้อความตอบกลับจาก Typhoon API');
+        throw new Error('ไม่พบข้อความตอบกลับจาก API');
       }
 
       state.aiSummary = content;
       if (summaryBox) summaryBox.textContent = content;
-      showToast('Typhoon AI เรียบเรียงบทสรุปสำเร็จแล้ว!', 'success');
+      showToast(`AI (${modelToUse}) เรียบเรียงบทสรุปสำเร็จแล้ว!`, 'success');
     }
   } catch (err) {
-    console.error('Typhoon API Exception:', err);
-    if (summaryBox) summaryBox.textContent = `เกิดข้อผิดพลาดในการเรียกใช้ Typhoon AI: ${err.message}\nโปรดตรวจสอบ API Key หรือการเชื่อมต่ออินเทอร์เน็ต`;
-    showToast(`เกิดข้อผิดพลาด Typhoon AI: ${err.message}`, 'error');
+    console.error('LLM API Exception:', err);
+    if (summaryBox) summaryBox.textContent = `เกิดข้อผิดพลาดในการเรียกใช้ AI (${modelToUse || endpointToUse}): ${err.message}\nโปรดตรวจสอบการตั้งค่า API Key, Endpoint หรือชื่อ Model ในหน้าต่างตั้งค่า`;
+    showToast(`เกิดข้อผิดพลาด AI: ${err.message}`, 'error');
   } finally {
     state.isAiGenerating = false;
     if (btn) btn.disabled = false;
@@ -1361,20 +1468,78 @@ window.switchSettingsSubTab = function (tabName) {
 };
 
 /**
+ * ฟังก์ชันช่วยเติมรายชื่อโมเดลใน Dropdown ตาม Provider ที่เลือก
+ */
+function populateModelDropdown(providerKey, selectedModel, customModelName) {
+  const selectModel = document.getElementById('settingTyphoonModel');
+  const customBox = document.getElementById('customModelBox');
+  const inputCustom = document.getElementById('settingTyphoonModelCustom');
+  if (!selectModel) return;
+
+  const conf = LLM_PROVIDERS[providerKey] || LLM_PROVIDERS.opentyphoon;
+  const models = conf.models || [];
+
+  selectModel.innerHTML = '';
+
+  let hasMatch = false;
+  models.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name;
+    if (m.id === selectedModel) {
+      opt.selected = true;
+      hasMatch = true;
+    }
+    selectModel.appendChild(opt);
+  });
+
+  const customOpt = document.createElement('option');
+  customOpt.value = 'custom';
+  customOpt.textContent = '-- ✍️ ระบุชื่อโมเดลเอง (Custom Model Name) --';
+  if (selectedModel === 'custom' || (!hasMatch && selectedModel)) {
+    customOpt.selected = true;
+  }
+  selectModel.appendChild(customOpt);
+
+  const isCustom = selectModel.value === 'custom';
+  if (customBox) customBox.style.display = isCustom ? 'block' : 'none';
+  if (inputCustom && (isCustom || customModelName)) {
+    if (customModelName) inputCustom.value = customModelName;
+    else if (!hasMatch && selectedModel && selectedModel !== 'custom') inputCustom.value = selectedModel;
+  }
+}
+
+/**
  * ฟังก์ชันเปิดหน้าต่างตั้งค่า (Global Settings Modal Opener)
  * @param {string} initialTab - 'general' หรือ 'prompt'
  */
 window.openSettingsModal = function (initialTab = 'general') {
   const modal = document.getElementById('settingsModal');
+  const selectProvider = document.getElementById('settingLlmProvider');
+  const inputApiUrl = document.getElementById('settingLlmApiUrl');
   const inputApiKey = document.getElementById('settingTyphoonApiKey');
   const selectModel = document.getElementById('settingTyphoonModel');
+  const inputModelCustom = document.getElementById('settingTyphoonModelCustom');
+  const customModelBox = document.getElementById('customModelBox');
+  const apiKeyHint = document.getElementById('apiKeyHintText');
   const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
   const customPromptEl = document.getElementById('settingCustomSystemPrompt');
   const customDirectivesEl = document.getElementById('settingCustomDirectives');
   const charCountEl = document.getElementById('promptCharCount');
 
-  if (inputApiKey) inputApiKey.value = state.settings.typhoonApiKey || '';
-  if (selectModel) selectModel.value = state.settings.typhoonModel || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct');
+  const curProvider = state.settings.llmProvider || 'opentyphoon';
+  const providerConf = LLM_PROVIDERS[curProvider] || LLM_PROVIDERS.opentyphoon;
+
+  if (selectProvider) selectProvider.value = curProvider;
+  if (inputApiUrl) inputApiUrl.value = state.settings.llmEndpoint || providerConf.endpoint || '';
+  if (inputApiKey) {
+    inputApiKey.value = state.settings.typhoonApiKey || '';
+    inputApiKey.placeholder = providerConf.keyPlaceholder || 'ใส่ API Key...';
+  }
+  if (apiKeyHint) apiKeyHint.innerHTML = providerConf.keyHint || '';
+
+  populateModelDropdown(curProvider, state.settings.typhoonModel, state.settings.customModelName);
+
   if (inputSheetsUrl) inputSheetsUrl.value = state.settings.googleSheetsUrl || '';
 
   // โหลดค่า System Prompt และ Directives ปัจจุบัน
@@ -1424,9 +1589,15 @@ function setupSettingsModal() {
   const btnClose = document.getElementById('btnCloseSettings');
   const btnSave = document.getElementById('btnSaveSettings');
 
+  const selectProvider = document.getElementById('settingLlmProvider');
+  const inputApiUrl = document.getElementById('settingLlmApiUrl');
   const inputApiKey = document.getElementById('settingTyphoonApiKey');
   const selectModel = document.getElementById('settingTyphoonModel');
+  const inputModelCustom = document.getElementById('settingTyphoonModelCustom');
+  const customModelBox = document.getElementById('customModelBox');
+  const apiKeyHint = document.getElementById('apiKeyHintText');
   const inputSheetsUrl = document.getElementById('settingGoogleSheetsUrl');
+
   const customPromptEl = document.getElementById('settingCustomSystemPrompt');
   const customDirectivesEl = document.getElementById('settingCustomDirectives');
   const charCountEl = document.getElementById('promptCharCount');
@@ -1457,6 +1628,38 @@ function setupSettingsModal() {
       if (typeof closeDeleteModal === 'function') closeDeleteModal();
     }
   });
+
+  // สลับ Provider: อัปเดต Endpoint, Models และ Hints อัตโนมัติ
+  if (selectProvider) {
+    selectProvider.addEventListener('change', () => {
+      const pKey = selectProvider.value;
+      const conf = LLM_PROVIDERS[pKey] || LLM_PROVIDERS.opentyphoon;
+
+      if (inputApiUrl && (conf.endpoint || pKey === 'custom')) {
+        inputApiUrl.value = conf.endpoint;
+      }
+      if (inputApiKey) {
+        inputApiKey.placeholder = conf.keyPlaceholder || 'ใส่ API Key...';
+      }
+      if (apiKeyHint) {
+        apiKeyHint.innerHTML = conf.keyHint || '';
+      }
+
+      const defaultModel = conf.models && conf.models.length > 0 ? conf.models[0].id : 'custom';
+      populateModelDropdown(pKey, defaultModel, inputModelCustom ? inputModelCustom.value : '');
+    });
+  }
+
+  // สลับการเลือกโมเดล: เปิด/ปิดช่องกรอกชื่อโมเดลเอง (Custom Model Input Box)
+  if (selectModel) {
+    selectModel.addEventListener('change', () => {
+      const isCustom = selectModel.value === 'custom';
+      if (customModelBox) customModelBox.style.display = isCustom ? 'block' : 'none';
+      if (isCustom && inputModelCustom) {
+        inputModelCustom.focus();
+      }
+    });
+  }
 
   // ปุ่มเลือก Preset
   document.querySelectorAll('.btn-preset-select').forEach(btn => {
@@ -1546,16 +1749,34 @@ function setupSettingsModal() {
   // บันทึกการตั้งค่าทั้งหมด
   if (btnSave) {
     btnSave.addEventListener('click', () => {
+      const newProvider = (selectProvider ? selectProvider.value : 'opentyphoon') || 'opentyphoon';
+      const conf = LLM_PROVIDERS[newProvider] || LLM_PROVIDERS.opentyphoon;
+      const newEndpoint = (inputApiUrl ? inputApiUrl.value : '').trim() || conf.endpoint || 'https://api.opentyphoon.ai/v1/chat/completions';
       const newApiKey = (inputApiKey ? inputApiKey.value : '').trim();
-      const newModel = (selectModel ? selectModel.value : '').trim() || (window.IraPrompts?.config?.defaultModel || 'typhoon-v2.5-30b-a3b-instruct');
+      const newModelSelect = (selectModel ? selectModel.value : '').trim() || 'typhoon-v2.5-30b-a3b-instruct';
+      const newCustomModel = (inputModelCustom ? inputModelCustom.value : '').trim();
       const newSheetsUrl = (inputSheetsUrl ? inputSheetsUrl.value : '').trim();
 
+      if (newModelSelect === 'custom' && !newCustomModel) {
+        showToast('กรุณาระบุชื่อโมเดล (Model Name) ในช่องที่กำหนด', 'warn');
+        if (inputModelCustom) inputModelCustom.focus();
+        return;
+      }
+
+      state.settings.llmProvider = newProvider;
+      state.settings.llmEndpoint = newEndpoint;
       state.settings.typhoonApiKey = newApiKey;
-      state.settings.typhoonModel = newModel;
+      state.settings.typhoonModel = newModelSelect;
+      state.settings.customModelName = newCustomModel;
       state.settings.googleSheetsUrl = newSheetsUrl;
 
+      localStorage.setItem('ira_llm_provider', newProvider);
+      localStorage.setItem('ira_llm_endpoint', newEndpoint);
+      localStorage.setItem('ira_llm_api_key', newApiKey);
       localStorage.setItem('ira_typhoon_api_key', newApiKey);
-      localStorage.setItem('ira_typhoon_model', newModel);
+      localStorage.setItem('ira_llm_model', newModelSelect);
+      localStorage.setItem('ira_typhoon_model', newModelSelect);
+      localStorage.setItem('ira_llm_model_custom', newCustomModel);
       localStorage.setItem('ira_google_sheets_url', newSheetsUrl);
 
       // บันทึก Prompt Settings
@@ -1571,7 +1792,8 @@ function setupSettingsModal() {
 
       window.closeSettingsModal();
       updateGoogleSheetsStatusUI();
-      showToast('บันทึกการตั้งค่าและเทมเพลต Prompt เรียบร้อยแล้ว!', 'success');
+      const displayModel = newModelSelect === 'custom' ? newCustomModel : newModelSelect;
+      showToast(`บันทึกการตั้งค่า AI (${displayModel}) และเทมเพลตเรียบร้อยแล้ว!`, 'success');
 
       if (newSheetsUrl) {
         window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true);
