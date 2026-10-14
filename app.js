@@ -26,6 +26,18 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // ตารางรายชื่อผู้ให้บริการ AI / LLM และการตั้งค่าพื้นฐาน
 const LLM_PROVIDERS = {
+  google_gemini: {
+    name: 'Google Gemini (Google AI Studio)',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    keyPlaceholder: 'AIzaSy...',
+    keyHint: 'รับ API Key ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); font-weight: 600;">aistudio.google.com</a> (ใช้ได้โดยตรงบน GitHub Pages ไม่ติด CORS)',
+    models: [
+      { id: 'gemini-2.5-flash', name: 'gemini-2.5-flash (แนะนำ / ฉลาดและเร็วล่าสุด)' },
+      { id: 'gemini-2.0-flash', name: 'gemini-2.0-flash (เสถียรและเร็วมาก)' },
+      { id: 'gemini-1.5-flash', name: 'gemini-1.5-flash (รุ่นมาตรฐาน)' },
+      { id: 'gemini-2.5-pro', name: 'gemini-2.5-pro (การคิดวิเคราะห์ขั้นสูง)' }
+    ]
+  },
   opentyphoon: {
     name: 'Typhoon AI (OpenTyphoon)',
     endpoint: 'https://api.opentyphoon.ai/v1/chat/completions',
@@ -518,7 +530,9 @@ async function generateAiSummary() {
         let errMessage = `HTTP ${response.status} ${response.statusText}`;
         try {
           const errJson = await response.json();
-          if (errJson && errJson.error) {
+          if (Array.isArray(errJson) && errJson[0] && errJson[0].error) {
+            errMessage = errJson[0].error.message || JSON.stringify(errJson[0].error);
+          } else if (errJson && errJson.error) {
             errMessage = typeof errJson.error === 'string' ? errJson.error : (errJson.error.message || JSON.stringify(errJson.error));
           }
         } catch (e) { }
