@@ -32,11 +32,11 @@ const LLM_PROVIDERS = {
     keyPlaceholder: 'AIzaSy...',
     keyHint: 'รับ API Key ฟรีได้ที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); font-weight: 600;">aistudio.google.com</a> (ใช้ได้โดยตรงบน GitHub Pages ไม่ติด CORS)',
     models: [
-      { id: 'gemini-2.0-flash', name: 'gemini-2.0-flash (แนะนำ / มาตรฐานเสถียรล่าสุด)' },
-      { id: 'gemini-1.5-flash', name: 'gemini-1.5-flash (รุ่นมาตรฐานยอดนิยม)' },
-      { id: 'gemini-2.0-flash-lite', name: 'gemini-2.0-flash-lite (ประมวลผลเร็วพิเศษ)' },
-      { id: 'gemini-1.5-pro', name: 'gemini-1.5-pro (การวิเคราะห์เชิงลึก)' },
-      { id: 'gemini-2.5-flash', name: 'gemini-2.5-flash (รุ่นพรีวิว)' }
+      { id: 'gemini-3.8-flash', name: 'gemini-3.8-flash (แนะนำ / รุ่นล่าสุดของ Google)' },
+      { id: 'gemini-flash-latest', name: 'gemini-flash-latest (อัปเดตอัตโนมัติเป็นตัวล่าสุด)' },
+      { id: 'gemini-3.6-flash', name: 'gemini-3.6-flash' },
+      { id: 'gemini-3.5-flash-lite', name: 'gemini-3.5-flash-lite' },
+      { id: 'gemini-3-pro-preview', name: 'gemini-3-pro-preview' }
     ]
   },
   opentyphoon: {
