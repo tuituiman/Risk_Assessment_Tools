@@ -537,6 +537,42 @@ async function generateAiSummary() {
             errMessage = typeof errJson.error === 'string' ? errJson.error : (errJson.error.message || JSON.stringify(errJson.error));
           }
         } catch (e) { }
+
+        // ตรวจจับ High Demand / Rate-limit สำหรับ Google Gemini -> Auto-fallback ไป gemini-3.5-flash-lite
+        if (providerKey === 'google_gemini' && (errMessage.includes('high demand') || response.status === 429 || response.status === 503) && modelToUse !== 'gemini-3.5-flash-lite') {
+          console.warn(`[Gemini Fallback] ${modelToUse} is experiencing high demand. Auto-retrying with gemini-3.5-flash-lite...`);
+          if (spinnerText) spinnerText.textContent = 'โมเดลติดคิวสูง กำลังสลับไปใช้ gemini-3.5-flash-lite สำรองให้อัตโนมัติ...';
+          showToast('โมเดลหลักติดคิวสูง กำลังสลับไปใช้รุ่น Lite สำรองให้อัตโนมัติ...', 'info');
+
+          await new Promise(r => setTimeout(r, 1000));
+
+          const fallbackRes = await fetch(endpointToUse, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify({
+              model: 'gemini-3.5-flash-lite',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+              ],
+              temperature: window.IraPrompts.config.temperature || 0.2,
+              max_tokens: window.IraPrompts.config.maxTokens || 1500
+            }),
+            signal: fetchSignal
+          });
+
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            const fallbackContent = fallbackData.choices && fallbackData.choices[0] && fallbackData.choices[0].message ? fallbackData.choices[0].message.content : '';
+            if (fallbackContent) {
+              state.aiSummary = fallbackContent;
+              if (summaryBox) summaryBox.textContent = fallbackContent;
+              showToast('AI (gemini-3.5-flash-lite) เรียบเรียงบทสรุปสำเร็จแล้ว!', 'success');
+              return;
+            }
+          }
+        }
+
         throw new Error(errMessage);
       }
 
