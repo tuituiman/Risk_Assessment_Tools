@@ -341,10 +341,10 @@ function compileUserNotes() {
     }
   }
 
-  mainSummaryLines.push(`- ข้อ 5.1 (ศักยภาพระบบ): ${d5Verdict}`);
   if (ans.q1_highThreat !== 'yes' && ans.q3_severityHigh === 'yes' && ans.q4_spreadFuture === 'yes') {
-    mainSummaryLines.push(`- ข้อ 5.2 (ระบบสุขภาพล่ม): ${d52Verdict}`);
+    mainSummaryLines.push(`- ข้อ 5.1 (ระบบสุขภาพล่ม): ${d52Verdict}`);
   }
+  mainSummaryLines.push(`- ข้อ 5.2 (ศักยภาพระบบ): ${d5Verdict}`);
 
   notesList.push(mainSummaryLines.join('\n'));
 
@@ -363,10 +363,10 @@ function compileUserNotes() {
     { id: 'sub_d4_a', noteId: 'note_d4_a', domain: 'd4', label: '4.1A เชื้อติดต่อสูง/รวมกลุ่มเดินทาง' },
     { id: 'sub_d4_b', noteId: 'note_d4_b', domain: 'd4', label: '4.1B อัตราป่วย Attack rate พุ่งเร็ว' },
     { id: 'sub_d4_c', noteId: 'note_d4_c', domain: 'd4', label: '4.1C รายงานผู้ป่วยมากในเวลาสั้น' },
-    { id: 'sub_d5_a', noteId: 'note_d5_a', domain: 'd5', label: '5.1A มาตรการสาธารณสุขพร้อม' },
-    { id: 'sub_d5_b', noteId: 'note_d5_b', domain: 'd5', label: '5.1B ระบบเตียง/ยา/บุคลากรเพียงพอ' },
-    { id: 'sub_d5_c', noteId: 'note_d5_c', domain: 'd5', label: '5.1C สื่อสารความเสี่ยงมีประสิทธิผล' },
-    { id: 'sub_d5_d', noteId: 'note_d5_d', domain: 'd5_d', label: '5.1D ความเปราะบาง/อุปสรรคสำคัญ' }
+    { id: 'sub_d5_a', noteId: 'note_d5_a', domain: 'd5', label: '5.2A มาตรการสาธารณสุขพร้อม' },
+    { id: 'sub_d5_b', noteId: 'note_d5_b', domain: 'd5', label: '5.2B ระบบเตียง/ยา/บุคลากรเพียงพอ' },
+    { id: 'sub_d5_c', noteId: 'note_d5_c', domain: 'd5', label: '5.2C สื่อสารความเสี่ยงมีประสิทธิผล' },
+    { id: 'sub_d5_d', noteId: 'note_d5_d', domain: 'd5_d', label: '5.2D ความเปราะบาง/อุปสรรคสำคัญ' }
   ];
 
   const validSubNotes = [];
@@ -419,8 +419,8 @@ function compileUserNotes() {
     { id: 'note_q3_general', key: 'd3', label: 'บันทึกภาพรวมข้อ 3 (ความรุนแรง)' },
     { id: 'note_q4_general', key: 'd4', label: 'บันทึกภาพรวมข้อ 4.1 (การแพร่กระจาย)' },
     { id: 'note_q4_2_general', key: 'd4_2', label: 'บันทึกภาพรวมข้อ 4.2 (ผู้ได้รับผลกระทบ)' },
-    { id: 'note_q5_2_general', key: 'd5_2', label: 'บันทึกภาพรวมข้อ 5.2 (ระบบสุขภาพล่ม)' },
-    { id: 'note_q5_general', key: 'd5', label: 'บันทึกภาพรวมข้อ 5.1 (ศักยภาพระบบ)' }
+    { id: 'note_q5_2_general', key: 'd5_2', label: 'บันทึกภาพรวมข้อ 5.1 (ระบบสุขภาพล่ม)' },
+    { id: 'note_q5_general', key: 'd5', label: 'บันทึกภาพรวมข้อ 5.2 (ศักยภาพระบบ)' }
   ];
 
   const validGeneral = [];
@@ -811,7 +811,8 @@ window.viewAuditDetail = function (id) {
     { label: '2. การสัมผัส', val: answers.q2_exposureActive },
     { label: '3. ความรุนแรง', val: answers.q3_severityHigh },
     { label: '4. การแพร่กระจาย', val: answers.q4_spreadFuture },
-    { label: '5.1 ศักยภาพระบบ', val: answers.q5_1_capacitySufficient }
+    { label: '5.1 ระบบสุขภาพล่ม', val: answers.q5_2_systemOverwhelmed },
+    { label: '5.2 ศักยภาพระบบ', val: answers.q5_1_capacitySufficient }
   ];
 
   const domainsHtml = domainLabels.map(d => {
@@ -844,10 +845,10 @@ window.viewAuditDetail = function (id) {
       sub_d4_a: '4.1A ติดต่อสูง/เดินทางรวมกลุ่ม',
       sub_d4_b: '4.1B Attack Rate พุ่งเร็ว',
       sub_d4_c: '4.1C ผู้ป่วยมากในเวลาสั้น',
-      sub_d5_a: '5.1A มาตรการสาธารณสุขพร้อม',
-      sub_d5_b: '5.1B เตียง ยา บุคลากรพร้อม',
-      sub_d5_c: '5.1C สื่อสารความเสี่ยงมีประสิทธิผล',
-      sub_d5_d: '5.1D ความเปราะบาง/อุปสรรคสำคัญ'
+      sub_d5_a: '5.2A มาตรการสาธารณสุขพร้อม',
+      sub_d5_b: '5.2B เตียง ยา บุคลากรพร้อม',
+      sub_d5_c: '5.2C สื่อสารความเสี่ยงมีประสิทธิผล',
+      sub_d5_d: '5.2D ความเปราะบาง/อุปสรรคสำคัญ'
     };
 
     const subItems = [];

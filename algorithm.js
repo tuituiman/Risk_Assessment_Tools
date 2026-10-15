@@ -97,13 +97,13 @@ function getMissingAssessments(answers) {
     return missing;
   }
 
-  // 2. ถ้าข้อ 1 = Yes (Priority Rule: ข้าม 2, 3, 4 ไปยังข้อ 5.1 ทันที)
+  // 2. ถ้าข้อ 1 = Yes (Priority Rule: ข้าม 2, 3, 4 ไปยังข้อ 5.2 ทันที)
   if (answers.q1_highThreat === 'yes') {
     if (!answers.q5_1_capacitySufficient) {
       missing.push({
         cardId: 'card_q5_1',
-        code: 'ข้อ 5.1',
-        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        code: 'ข้อ 5.2',
+        title: '5.2 ศักยภาพด้านการแพทย์และการตอบสนอง',
         desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
       });
     }
@@ -135,8 +135,8 @@ function getMissingAssessments(answers) {
       if (!answers.q5_1_capacitySufficient) {
         missing.push({
           cardId: 'card_q5_1',
-          code: 'ข้อ 5.1',
-          title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+          code: 'ข้อ 5.2',
+          title: '5.2 ศักยภาพด้านการแพทย์และการตอบสนอง',
           desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
         });
       }
@@ -173,30 +173,30 @@ function getMissingAssessments(answers) {
   const isSpread = answers.q4_spreadFuture !== 'no';
 
   if (isSevere && isSpread) {
-    // ต้องตอบทั้ง 5.2 (ระบบล่ม) และ 5.1 (ศักยภาพระบบ)
+    // ต้องตอบทั้ง 5.1 (ระบบล่ม) และ 5.2 (ศักยภาพระบบ)
     if (!answers.q5_2_systemOverwhelmed) {
       missing.push({
         cardId: 'card_q5_2',
-        code: 'ข้อ 5.2',
-        title: '5.2 การล่มของระบบสุขภาพ (Overwhelmed Healthcare System)',
+        code: 'ข้อ 5.1',
+        title: '5.1 การล่มของระบบสุขภาพ (Overwhelmed Healthcare System)',
         desc: 'ประเมินว่าระบบบริการสุขภาพและเตียง ICU มีแนวโน้มจะเกินกำลังหรือไม่'
       });
     }
     if (!answers.q5_1_capacitySufficient) {
       missing.push({
         cardId: 'card_q5_1',
-        code: 'ข้อ 5.1',
-        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        code: 'ข้อ 5.2',
+        title: '5.2 ศักยภาพด้านการแพทย์และการตอบสนอง',
         desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
       });
     }
   } else {
-    // ต้องการเพียงข้อ 5.1 (ศักยภาพระบบ)
+    // ต้องการเพียงข้อ 5.2 (ศักยภาพระบบ)
     if (!answers.q5_1_capacitySufficient) {
       missing.push({
         cardId: 'card_q5_1',
-        code: 'ข้อ 5.1',
-        title: '5.1 ศักยภาพด้านการแพทย์และการตอบสนอง',
+        code: 'ข้อ 5.2',
+        title: '5.2 ศักยภาพด้านการแพทย์และการตอบสนอง',
         desc: 'ประเมินความพร้อมในการควบคุมโรคและการรักษาพยาบาล'
       });
     }
@@ -508,32 +508,32 @@ function evaluateRiskAlgorithm(state) {
           rationale.step4 = 'คาดว่าจะมีการแพร่กระจายสูง/จำนวนป่วยพุ่งขึ้น';
 
           if (answers.q5_2_systemOverwhelmed === 'yes') {
-            rationale.step5_2 = 'ระบบบริการสุขภาพมีแนวโน้มจะล่ม (Overwhelmed - Tier 4)';
+            rationale.step5_1 = 'ระบบบริการสุขภาพมีแนวโน้มจะล่ม (Overwhelmed - ข้อ 5.1)';
             if (answers.q5_1_capacitySufficient === 'yes') {
               level = 'High';
-              rationale.step5 = 'ระบบสุขภาพล่มแต่มีศักยภาพรองรับบางส่วน -> ระดับความเสี่ยง: สูง (High)';
+              rationale.step5_2 = 'ระบบสุขภาพล่มแต่มีศักยภาพควบคุมรองรับบางส่วน (ข้อ 5.2) -> ระดับความเสี่ยง: สูง (High)';
             } else {
               level = 'Very High';
-              rationale.step5 = 'ระบบสุขภาพล่มและศักยภาพไม่เพียงพอ -> ระดับความเสี่ยง: สูงมาก (Very High)';
+              rationale.step5_2 = 'ระบบสุขภาพล่มและศักยภาพไม่เพียงพอ (ข้อ 5.2) -> ระดับความเสี่ยง: สูงมาก (Very High)';
             }
           } else {
-            rationale.step5_2 = 'ระบบบริการสุขภาพยังไม่ถึงขั้นล่ม (Tier 3)';
+            rationale.step5_1 = 'ระบบบริการสุขภาพยังไม่ถึงขั้นล่ม (ข้อ 5.1)';
             if (answers.q5_1_capacitySufficient === 'yes') {
               level = 'Moderate';
-              rationale.step5 = 'ระบบยังไม่ล่มและมีศักยภาพเพียงพอ -> ระดับความเสี่ยง: ปานกลาง (Moderate)';
+              rationale.step5_2 = 'ระบบยังไม่ล่มและมีศักยภาพเพียงพอ (ข้อ 5.2) -> ระดับความเสี่ยง: ปานกลาง (Moderate)';
             } else {
               level = 'High';
-              rationale.step5 = 'ระบบยังไม่ล่มแต่ศักยภาพไม่เพียงพอ -> ระดับความเสี่ยง: สูง (High)';
+              rationale.step5_2 = 'ระบบยังไม่ล่มแต่ศักยภาพไม่เพียงพอ (ข้อ 5.2) -> ระดับความเสี่ยง: สูง (High)';
             }
           }
         } else {
           rationale.step4 = 'ไม่คาดว่าเชื้อจะแพร่ระบาดขยายวงกว้าง (Tier 2)';
           if (answers.q5_1_capacitySufficient === 'yes') {
             level = 'Low';
-            rationale.step5 = 'มีศักยภาพเพียงพอ -> ระดับความเสี่ยง: ต่ำ (Low)';
+            rationale.step5_2 = 'มีศักยภาพเพียงพอ (ข้อ 5.2) -> ระดับความเสี่ยง: ต่ำ (Low)';
           } else {
             level = 'Moderate';
-            rationale.step5 = 'ศักยภาพไม่เพียงพอ/ไม่แน่ชัด -> ระดับความเสี่ยง: ปานกลาง (Moderate)';
+            rationale.step5_2 = 'ศักยภาพไม่เพียงพอ/ไม่แน่ชัด (ข้อ 5.2) -> ระดับความเสี่ยง: ปานกลาง (Moderate)';
           }
         }
       }
@@ -784,8 +784,8 @@ function updateDomainPillsStatus(state) {
   const spreadHigh = answers.q4_spreadFuture !== 'no';
 
   if (severityHigh && spreadHigh) {
-    // กิ่งนี้ต้องประเมินทั้ง 5.2 และ 5.1
-    if (labelPillD5) labelPillD5.textContent = '5.1 ศักยภาพระบบ:';
+    // กิ่งนี้ต้องประเมินทั้ง 5.1 (ระบบล่ม) และ 5.2 (ศักยภาพระบบ)
+    if (labelPillD5) labelPillD5.textContent = '5.2 ศักยภาพระบบ:';
     updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
 
     if (pillItemD5_2) {
@@ -793,8 +793,8 @@ function updateDomainPillsStatus(state) {
       updateDomainPill('pill-d5_2', answers.q5_2_systemOverwhelmed || 'missing');
     }
   } else {
-    // กิ่งนี้ต้องการแค่ 5.1
-    if (labelPillD5) labelPillD5.textContent = '5. ศักยภาพระบบ:';
+    // กิ่งนี้ต้องการแค่ 5.2
+    if (labelPillD5) labelPillD5.textContent = '5.2 ศักยภาพระบบ:';
     updateDomainPill('pill-d5', answers.q5_1_capacitySufficient || 'missing');
     if (pillItemD5_2) pillItemD5_2.style.display = 'none';
   }

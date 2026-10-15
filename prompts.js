@@ -187,8 +187,8 @@ function buildTyphoonUserPrompt(metadata, answers, result, compiledNotes, custom
 - ข้อ 3 ความรุนแรงทางคลินิก (Severity): ${answers.q3_severityHigh || '-'}
 - ข้อ 4.1 การแพร่ระบาดในอนาคต (Spread Potential): ${answers.q4_spreadFuture || '-'}
 - ข้อ 4.2 ขนาดผลกระทบปัจจุบัน (ถ้าไม่มีการสัมผัส): ${answers.q4_2_significantCurrent || '-'}
-- ข้อ 5.1 ศักยภาพการควบคุมในพื้นที่ (Capacity): ${answers.q5_1_capacitySufficient || '-'}
-- ข้อ 5.2 ความเสี่ยงระบบสุขภาพล่ม (Overwhelmed): ${answers.q5_2_systemOverwhelmed || '-'}
+- ข้อ 5.1 ความเสี่ยงระบบสุขภาพล่ม (Overwhelmed): ${answers.q5_2_systemOverwhelmed || '-'}
+- ข้อ 5.2 ศักยภาพการควบคุมในพื้นที่ (Capacity): ${answers.q5_1_capacitySufficient || '-'}
 - ผลลัพธ์ระดับความเสี่ยงที่คำนวณได้: ระดับ "${result.levelTh}" (${result.level} Risk)
 - มาตรการที่ระบบแนะนำ: ${result.suggestedActions && result.suggestedActions.length > 0 ? result.suggestedActions.join(', ') : 'ติดตามสถานการณ์อย่างใกล้ชิด'}
 

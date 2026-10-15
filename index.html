@@ -153,7 +153,7 @@
             <div class="option-group">
               <label class="opt-card" id="opt_q1_yes">
                 <input type="radio" name="q1_highThreat" value="yes">
-                <span class="opt-text">ใช่ (Yes) ➔ ข้ามไปข้อ 5.1 ทันที</span>
+                <span class="opt-text">ใช่ (Yes) ➔ ข้ามไปข้อ 5.2 ทันที</span>
               </label>
               <label class="opt-card" id="opt_q1_no">
                 <input type="radio" name="q1_highThreat" value="no">
@@ -163,8 +163,8 @@
 
             <!-- Dynamic Skip Banner when Q1 is Yes -->
             <div class="flow-skip-banner" id="banner_q1_skip" style="display: none; margin-top: 14px;">
-              <span>⏭️ <strong>ตาม Flow ของ WHO IRA:</strong> เนื่องจากเป็นภัยคุกคามระดับสูง
-                ระบบจะ<strong>ข้ามและซ่อนข้อ 2, 3, 4 และ 5.2 ทั้งหมด</strong> และมุ่งตรงไปยัง<strong>ข้อ 5.1
+              <span>⏭️ <strong>ตาม Flow ของ WHO QIRA:</strong> เนื่องจากเป็นภัยคุกคามระดับสูง
+                ระบบจะ<strong>ข้ามและซ่อนข้อ 2, 3, 4 และ 5.1 ทั้งหมด</strong> และมุ่งตรงไปยัง<strong>ข้อ 5.2
                   (การประเมินศักยภาพ)</strong> เพื่อสรุปผลความเสี่ยงทันที</span>
             </div>
 
@@ -546,7 +546,7 @@
             <div class="option-group">
               <label class="opt-card" id="opt_q4_2_yes">
                 <input type="radio" name="q4_2_significant" value="yes">
-                <span class="opt-text">ใช่ (Yes - ได้รับผลกระทบมาก) ➔ นำสู่ข้อ 5.1</span>
+                <span class="opt-text">ใช่ (Yes - ได้รับผลกระทบมาก) ➔ นำสู่ข้อ 5.2</span>
               </label>
               <label class="opt-card" id="opt_q4_2_no">
                 <input type="radio" name="q4_2_significant" value="no">
@@ -556,7 +556,7 @@
 
             <!-- Dynamic notice for Very Low -->
             <div class="flow-skip-banner" id="banner_q4_2_verylow" style="margin-top: 14px;">
-              <span>🟢 <strong>ตาม Flow ของ WHO IRA:</strong> หากไม่มีการสัมผัสแล้ว และไม่มีผู้ได้รับผลกระทบจำนวนมาก
+              <span>🟢 <strong>ตาม Flow ของ WHO QIRA:</strong> หากไม่มีการสัมผัสแล้ว และไม่มีผู้ได้รับผลกระทบจำนวนมาก
                 ผลการประเมินจะสรุปเป็น <strong>"ความเสี่ยงต่ำมาก (Very Low Risk)"</strong> ทันที
                 สามารถยุติการติดตามได้</span>
             </div>
@@ -569,11 +569,11 @@
           </div>
         </div>
 
-        <!-- ================= QUESTION 5.2: System Overwhelmed ================= -->
+        <!-- ================= QUESTION 5.1: System Overwhelmed ================= -->
         <div class="dynamic-question-card" id="card_q5_2">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 5.2 จากเกณฑ์ WHO IRA (กรณีความรุนแรงสูง + ระบาดสูง)</span>
-            <h2>5.2 ภาระต่อระบบบริการสุขภาพ (Healthcare System Overwhelmed)</h2>
+            <span class="step-badge-tag">ข้อ 5.1 จากเกณฑ์ WHO QIRA (กรณีความรุนแรงสูง + ระบาดสูง)</span>
+            <h2>5.1 ภาระต่อระบบบริการสุขภาพ (Healthcare System Overwhelmed)</h2>
             <p class="step-subtitle">ประเมินความเสี่ยงที่ระบบบริการสุขภาพจะล่ม หรือเกินกำลังที่จะรองรับได้</p>
           </div>
 
@@ -594,15 +594,14 @@
             </div>
 
             <div class="criteria-list" style="margin-top: 12px;">
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">ปัจจัยพิจารณา (ตามสไลด์หน้า
-                40):</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">ปัจจัยพิจารณา (ตามเกณฑ์ WHO QIRA):</div>
               <div class="criteria-item">
                 <span>จำนวนเตียงผู้ป่วยใน/ICU, บุคลากรที่ผ่านการอบรม, ความพร้อมของเครื่องช่วยหายใจ ยา และเวชภัณฑ์</span>
               </div>
             </div>
 
             <div class="notes-container">
-              <label class="notes-label" for="note_q5_2_general">📝 ข้อมูล/เหตุผลประกอบข้อ 5.2
+              <label class="notes-label" for="note_q5_2_general">📝 ข้อมูล/เหตุผลประกอบข้อ 5.1
                 (การล่มของระบบสุขภาพ):</label>
               <textarea id="note_q5_2_general" class="domain-notes-textarea"
                 placeholder="ระบุอัตราครองเตียง ICU, จำนวนห้องแยกความดันลบ, หรือข้อจำกัดด้านบุคลากร..."></textarea>
@@ -610,11 +609,11 @@
           </div>
         </div>
 
-        <!-- ================= QUESTION 5.1: Capacity Assessment ================= -->
+        <!-- ================= QUESTION 5.2: Capacity Assessment ================= -->
         <div class="dynamic-question-card" id="card_q5_1">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 5.1 จากเกณฑ์ WHO IRA</span>
-            <h2>5.1 ศักยภาพด้านการแพทย์และการตอบสนอง (Capacity Assessment)</h2>
+            <span class="step-badge-tag">ข้อ 5.2 จากเกณฑ์ WHO QIRA</span>
+            <h2>5.2 ศักยภาพด้านการแพทย์และการตอบสนอง (Capacity Assessment)</h2>
             <p class="step-subtitle">ประเมินความพร้อมในการควบคุมโรค ระบบรักษาพยาบาล และการมีส่วนร่วมของชุมชน</p>
           </div>
 
@@ -711,7 +710,7 @@
 
             <!-- Main Question Note Box -->
             <div class="notes-container">
-              <label class="notes-label" for="note_q5_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 5.1
+              <label class="notes-label" for="note_q5_general">📝 ข้อมูล/เหตุผลประกอบการพิจารณาข้อ 5.2
                 (ศักยภาพระบบ):</label>
               <textarea id="note_q5_general" class="domain-notes-textarea"
                 placeholder="ระบุการสนับสนุนที่พื้นที่ต้องการเพิ่มเติม, ความพร้อมของเวชภัณฑ์..."></textarea>
@@ -862,16 +861,16 @@
             <span id="label-pill-d4">4. การแพร่กระจาย:</span>
             <span class="domain-pill-status" id="pill-d4">-</span>
           </div>
-          <div class="domain-pill-item clickable" id="pillItem_d5" onclick="window.scrollToQuestionCard('card_q5_1')"
-            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.1">
-            <span id="label-pill-d5">5. ศักยภาพระบบ:</span>
-            <span class="domain-pill-status" id="pill-d5">-</span>
-          </div>
-          <!-- 5.2 การล่มของระบบสุขภาพ (แสดงเมื่อเข้าเงื่อนไขความรุนแรงและการแพร่ระบาดสูง) -->
+          <!-- 5.1 การล่มของระบบสุขภาพ (แสดงเมื่อเข้าเงื่อนไขความรุนแรงและการแพร่ระบาดสูง) -->
           <div class="domain-pill-item clickable" id="pillItem_d5_2" style="display: none;"
-            onclick="window.scrollToQuestionCard('card_q5_2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.2">
-            <span>5.2 ระบบสุขภาพล่ม:</span>
+            onclick="window.scrollToQuestionCard('card_q5_2')" title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.1">
+            <span id="label-pill-d5-1">5.1 ระบบสุขภาพล่ม:</span>
             <span class="domain-pill-status" id="pill-d5_2">-</span>
+          </div>
+          <div class="domain-pill-item clickable" id="pillItem_d5" onclick="window.scrollToQuestionCard('card_q5_1')"
+            title="คลิกเพื่อไปตอบหรือแก้ไขข้อ 5.2">
+            <span id="label-pill-d5">5.2 ศักยภาพระบบ:</span>
+            <span class="domain-pill-status" id="pill-d5">-</span>
           </div>
         </div>
 
