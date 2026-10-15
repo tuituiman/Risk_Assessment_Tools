@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- * Google Apps Script for QIRA Assistant (WHO Quick Initial Risk Assessment)
+ * Google Apps Script for QIRA Assistant (WHO Quick and Immediate Risk Assessment)
  * =====================================================================
  * 
  * คุณสมบัติ:

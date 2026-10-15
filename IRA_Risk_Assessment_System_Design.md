@@ -1,11 +1,11 @@
 # 📋 เอกสารการออกแบบระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข
-## (Public Health Quick Initial Risk Assessment System: QIRA Assistant)
+## (Public Health Quick and Immediate Risk Assessment System: QIRA Assistant)
 
 ---
 
 ## 1. บทนำและเป้าหมายของระบบ (Overview & Objectives)
 ระบบนี้ถูกออกแบบมาเพื่อเป็นเครื่องมือช่วยเจ้าหน้าที่สาธารณสุข (EOC / RRT / กลุ่มงานระบาดวิทยา) ในการประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้นอย่างเป็นระบบ รวดเร็ว และเป็นมาตรฐานเดียวกัน โดยมีคุณสมบัติหลัก:
-1. **QIRA Algorithm Engine:** วิเคราะห์ระดับความเสี่ยงตามตรรกะ **WHO Quick Initial Risk Assessment (5 Domains)** แบบ Interactive Step-by-Step
+1. **QIRA Algorithm Engine:** วิเคราะห์ระดับความเสี่ยงตามตรรกะ **WHO Quick and Immediate Risk Assessment (5 Domains)** แบบ Interactive Step-by-Step
 2. **Dynamic Risk & Action Output:** คำนวณระดับความเสี่ยง (Very Low ถึง Very High) พร้อมข้อเสนอแนะเชิงนโยบาย/มาตรการควบคุมทันที
 3. **Audit Trail & Google Sheets Integration:** จัดเก็บประวัติการประเมินลง Google Sheets เพื่อความโปร่งใสและตรวจสอบย้อนหลังได้ (Traceability)
 4. **AI Narrative Summary (Typhoon AI API):** เชื่อมต่อ LLM ภาษาไทยขนาดใหญ่ (Typhoon) เพื่อเรียบเรียงเป็นรายงานบรรยายสถานการณ์ ผลการประเมินความเสี่ยง และข้อเสนอแนะเชิงมาตรการในรูปแบบทางการ
@@ -51,9 +51,9 @@ flowchart TD
 
 ---
 
-## 3. ผังตรรกะการประเมินความเสี่ยง (IRA Algorithm Logic)
+## 3. ผังตรรกะการประเมินความเสี่ยง (QIRA Algorithm Logic)
 
-อ้างอิงตามเกณฑ์ WHO Initial Risk Assessment Algorithm (หน้า 26–40):
+อ้างอิงตามเกณฑ์ WHO Quick and Immediate Risk Assessment Algorithm (หน้า 26–40):
 
 ```mermaid
 graph TD
@@ -140,7 +140,7 @@ graph TD
 
 ### 6.2 ตัวอย่าง Prompt Template
 ```markdown
-คุณเป็นแพทย์ผู้เชี่ยวชาญด้านระบาดวิทยาและเวชศาสตร์ป้องกัน ทำหน้าที่เขียนสรุปผลการประเมินความเสี่ยง (Initial Risk Assessment Report)
+คุณเป็นแพทย์ผู้เชี่ยวชาญด้านระบาดวิทยาและเวชศาสตร์ป้องกัน ทำหน้าที่เขียนสรุปผลการประเมินความเสี่ยง (Quick and Immediate Risk Assessment Report: QIRA)
 
 [ข้อมูลเหตุการณ์]
 - ชื่อเหตุการณ์: {{eventName}}

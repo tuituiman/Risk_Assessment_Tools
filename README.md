@@ -1,7 +1,7 @@
 # 🛡️ QIRA Assistant: ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข
-### (Quick Initial Risk Assessment for Acute Public Health Events - WHO Standard)
+### (Quick and Immediate Risk Assessment for Acute Public Health Events - WHO Standard)
 
-ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น พัฒนาตามแนวทาง **WHO Quick Initial Risk Assessment (QIRA) Algorithm** พร้อมระบบเขียนบทบรรยายสรุปสถานการณ์อัตโนมัติด้วย **Typhoon AI API** และการจัดเก็บข้อมูลตรวจสอบย้อนหลังลง **Google Sheets (Audit Trail)**
+ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น พัฒนาตามแนวทาง **WHO Quick and Immediate Risk Assessment (QIRA) Algorithm** พร้อมระบบเขียนบทบรรยายสรุปสถานการณ์อัตโนมัติด้วย **Typhoon AI API** และการจัดเก็บข้อมูลตรวจสอบย้อนหลังลง **Google Sheets (Audit Trail)**
 
 ---
 

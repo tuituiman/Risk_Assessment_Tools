@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * QIRA Assistant - WHO Quick Initial Risk Assessment Algorithm Engine (algorithm.js)
+ * QIRA Assistant - WHO Quick and Immediate Risk Assessment Algorithm Engine (algorithm.js)
  * ==============================================================================
  * 
  * รับผิดชอบ:
@@ -414,7 +414,7 @@ function updateDynamicFlow(state) {
 }
 
 /**
- * คำนวณระดับความเสี่ยงตามอัลกอริทึม WHO Quick Initial Risk Assessment (QIRA)
+ * คำนวณระดับความเสี่ยงตามอัลกอริทึม WHO Quick and Immediate Risk Assessment (QIRA)
  * @param {Object} state - Application State
  */
 function evaluateRiskAlgorithm(state) {
