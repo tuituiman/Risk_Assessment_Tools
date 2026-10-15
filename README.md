@@ -1,13 +1,13 @@
-# 🛡️ IRA Assistant: ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข
-### (Initial Risk Assessment for Acute Public Health Events - WHO Standard)
+# 🛡️ QIRA Assistant: ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข
+### (Quick Initial Risk Assessment for Acute Public Health Events - WHO Standard)
 
-ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น พัฒนาตามแนวทาง **WHO Initial Risk Assessment (IRA) Algorithm** พร้อมระบบเขียนบทบรรยายสรุปสถานการณ์อัตโนมัติด้วย **Typhoon AI API** และการจัดเก็บข้อมูลตรวจสอบย้อนหลังลง **Google Sheets (Audit Trail)**
+ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น พัฒนาตามแนวทาง **WHO Quick Initial Risk Assessment (QIRA) Algorithm** พร้อมระบบเขียนบทบรรยายสรุปสถานการณ์อัตโนมัติด้วย **Typhoon AI API** และการจัดเก็บข้อมูลตรวจสอบย้อนหลังลง **Google Sheets (Audit Trail)**
 
 ---
 
 ## 🌟 คุณสมบัติเด่น (Features)
 
-1. **WHO IRA Decision Engine (5 Domains):**
+1. **WHO QIRA Decision Engine (5 Domains):**
    - คำนวณตรรกะแบบต้นไม้การตัดสินใจตามเกณฑ์มาตรฐานขององค์การอนามัยโลก (WHO) และกรมควบคุมโรค (หน้า 26–40)
    - ครอบคลุมทั้ง 5 มิติ: 
      - **Domain 1:** ภัยคุกคามระดับสูง (High Threat Hazard)

@@ -1,11 +1,11 @@
 /**
  * ==============================================================================
- * IRA Assistant - Main Application & UI Orchestrator (app.js)
+ * QIRA Assistant - Main Application & UI Orchestrator (app.js)
  * ==============================================================================
  * 
  * โมดูลหลักที่ประสานการทำงานระหว่าง:
  * - prompts.js: เทมเพลตคำสั่ง Typhoon AI
- * - algorithm.js: เอนจินคำนวณและ Decision Flow ของ WHO IRA
+ * - algorithm.js: เอนจินคำนวณและ Decision Flow ของ WHO QIRA
  * - sheets_api.js: การเชื่อมต่อ Google Sheets และ Audit Trail
  * ==============================================================================
  */
@@ -509,7 +509,7 @@ async function generateAiSummary() {
       }
       if (providerKey === 'openrouter') {
         requestHeaders['HTTP-Referer'] = window.location.origin || 'https://github.com/tuituiman/Risk_Assessment_Tools';
-        requestHeaders['X-Title'] = 'IRA Assistant';
+        requestHeaders['X-Title'] = 'QIRA Assistant';
       }
 
       const response = await fetch(endpointToUse, {
@@ -934,7 +934,7 @@ window.viewAuditDetail = function (id) {
     <!-- Result & Decisions -->
     <div class="detail-card-section">
       <div class="detail-section-title" style="justify-content: space-between;">
-        <span><span>⚖️</span> ผลการประเมินและ 5 มิติเกณฑ์ WHO IRA:</span>
+        <span><span>⚖️</span> ผลการประเมินและ 5 มิติเกณฑ์ WHO QIRA:</span>
         ${sheetBadgeHtml}
       </div>
       <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
@@ -2045,6 +2045,26 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnExportCsv) btnExportCsv.addEventListener('click', () => window.IraSheets.exportHistoryCSV(state, showToast));
   if (btnPresetWuhan) btnPresetWuhan.addEventListener('click', loadPresetWuhanOutbreak);
   if (btnPullSheet) btnPullSheet.addEventListener('click', () => window.IraSheets.fetchEventsFromGoogleSheet(false, state, getAppHelpers(), true));
+
+  // Dropdown เอกสารอ้างอิงและคู่มือ (WHO QIRA & DDC)
+  const btnDocRefToggle = document.getElementById('btnDocRefToggle');
+  const menuDocRef = document.getElementById('menuDocRef');
+  if (btnDocRefToggle && menuDocRef) {
+    btnDocRefToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isShown = menuDocRef.classList.contains('show');
+      menuDocRef.classList.toggle('show', !isShown);
+      btnDocRefToggle.setAttribute('aria-expanded', !isShown);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menuDocRef.contains(e.target) && e.target !== btnDocRefToggle) {
+        menuDocRef.classList.remove('show');
+        btnDocRefToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
   const btnSyncAllPending = document.getElementById('btnSyncAllPending');
   if (btnSyncAllPending) {
     btnSyncAllPending.addEventListener('click', () => {

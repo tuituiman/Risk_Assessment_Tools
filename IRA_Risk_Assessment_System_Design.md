@@ -1,11 +1,11 @@
 # 📋 เอกสารการออกแบบระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข
-## (Public Health Initial Risk Assessment System: IRA Assistant)
+## (Public Health Quick Initial Risk Assessment System: QIRA Assistant)
 
 ---
 
 ## 1. บทนำและเป้าหมายของระบบ (Overview & Objectives)
 ระบบนี้ถูกออกแบบมาเพื่อเป็นเครื่องมือช่วยเจ้าหน้าที่สาธารณสุข (EOC / RRT / กลุ่มงานระบาดวิทยา) ในการประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้นอย่างเป็นระบบ รวดเร็ว และเป็นมาตรฐานเดียวกัน โดยมีคุณสมบัติหลัก:
-1. **IRA Algorithm Engine:** วิเคราะห์ระดับความเสี่ยงตามตรรกะ **WHO Initial Risk Assessment (5 Domains)** แบบ Interactive Step-by-Step
+1. **QIRA Algorithm Engine:** วิเคราะห์ระดับความเสี่ยงตามตรรกะ **WHO Quick Initial Risk Assessment (5 Domains)** แบบ Interactive Step-by-Step
 2. **Dynamic Risk & Action Output:** คำนวณระดับความเสี่ยง (Very Low ถึง Very High) พร้อมข้อเสนอแนะเชิงนโยบาย/มาตรการควบคุมทันที
 3. **Audit Trail & Google Sheets Integration:** จัดเก็บประวัติการประเมินลง Google Sheets เพื่อความโปร่งใสและตรวจสอบย้อนหลังได้ (Traceability)
 4. **AI Narrative Summary (Typhoon AI API):** เชื่อมต่อ LLM ภาษาไทยขนาดใหญ่ (Typhoon) เพื่อเรียบเรียงเป็นรายงานบรรยายสถานการณ์ ผลการประเมินความเสี่ยง และข้อเสนอแนะเชิงมาตรการในรูปแบบทางการ
@@ -17,8 +17,8 @@
 ```mermaid
 flowchart TD
     subgraph Client ["🖥️ Web Application (Frontend)"]
-        UI["UI / แบบฟอร์มประเมินความเสี่ยง IRA\n(Responsive: Mobile / Tablet / PC)"]
-        Engine["IRA Decision Logic Engine\n(คำนวณ 5 Domains)"]
+        UI["UI / แบบฟอร์มประเมินความเสี่ยง QIRA\n(Responsive: Mobile / Tablet / PC)"]
+        Engine["QIRA Decision Logic Engine\n(คำนวณ 5 Domains)"]
         UI --> Engine
     end
 

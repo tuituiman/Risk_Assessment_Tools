@@ -1,10 +1,10 @@
 /**
  * ==============================================================================
- * IRA Assistant - Google Sheets Integration & Data Persistence (sheets_api.js)
+ * QIRA Assistant - Google Sheets Integration & Data Persistence (sheets_api.js)
  * ==============================================================================
  * 
  * รับผิดชอบ:
- * 1. การสร้างและรันรหัสประเมินอัตโนมัติ (Sequential Assessment ID: IRA-xxx-yyyy)
+ * 1. การสร้างและรันรหัสประเมินอัตโนมัติ (Sequential Assessment ID: QIRA-xxx-yyyy)
  * 2. การส่งข้อมูลขึ้น Google Sheets Web App (Concurrency Lock, Overwrite, Add New)
  * 3. การดึงประวัติ (Sync), ลบข้อมูลด้วยการยืนยันรหัสผ่าน, และส่งออก CSV
  * 4. ฟังก์ชันความปลอดภัย (HTML Escaping ป้องกัน XSS)
@@ -114,10 +114,10 @@ function jsArgAttr(value) {
 }
 
 /**
- * สร้างรหัสลำดับประเมินอัตโนมัติ: IRA-{xxx}-20xx
+ * สร้างรหัสลำดับประเมินอัตโนมัติ: QIRA-{xxx}-20xx
  * @param {number|null} customYear 
  * @param {Object} state 
- * @returns {string} เช่น IRA-001-2026
+ * @returns {string} เช่น QIRA-001-2026
  */
 function generateNextAssessmentId(customYear, state) {
   let year = customYear;
@@ -147,7 +147,7 @@ function generateNextAssessmentId(customYear, state) {
   const beYear = ceYear + 543;
 
   let maxSeq = 0;
-  const regex = new RegExp(`^IRA\\s*-\\s*(\\d+)\\s*-\\s*(${ceYear}|${beYear})$`, 'i');
+  const regex = new RegExp(`^(?:QIRA|IRA)\\s*-\\s*(\\d+)\\s*-\\s*(${ceYear}|${beYear})$`, 'i');
 
   if (state && state.auditHistory) {
     state.auditHistory.forEach(item => {
@@ -177,7 +177,7 @@ function generateNextAssessmentId(customYear, state) {
 
   const nextSeq = maxSeq + 1;
   const paddedSeq = String(nextSeq).padStart(3, '0');
-  return `IRA-${paddedSeq}-${ceYear}`;
+  return `QIRA-${paddedSeq}-${ceYear}`;
 }
 
 /**
@@ -844,7 +844,7 @@ function exportHistoryCSV(state, showToast) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `IRA_Audit_Export_${new Date().toISOString().split('T')[0]}.csv`;
+  a.download = `QIRA_Audit_Export_${new Date().toISOString().split('T')[0]}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

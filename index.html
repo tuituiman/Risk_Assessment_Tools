@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IRA Assistant - ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข (WHO IRA)</title>
+  <title>QIRA Assistant - ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุข (WHO QIRA)</title>
   <meta name="description"
-    content="ระบบช่วยประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น ตามเกณฑ์ Initial Risk Assessment (IRA) ขององค์การอนามัยโลก พร้อมบันทึก Google Sheets และสรุปบทบรรยายด้วย Typhoon AI">
+    content="ระบบช่วยประเมินความเสี่ยงต่อเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น ตามเกณฑ์ Quick Initial Risk Assessment (QIRA) ขององค์การอนามัยโลก พร้อมบันทึก Google Sheets และสรุปบทบรรยายด้วย Typhoon AI">
 
   <!-- Google Fonts: Prompt & Inter (Optimized weight subsets) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap"
     rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=2.7">
+  <link rel="stylesheet" href="style.css?v=2.8">
 </head>
 
 <body>
@@ -26,8 +26,8 @@
       <div class="brand-section">
         <div class="brand-logo" aria-hidden="true">🛡️</div>
         <div class="brand-text">
-          <h1>IRA Assistant <span class="brand-badge">WHO Standard</span></h1>
-          <div class="brand-sub">ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น (Initial Risk Assessment)
+          <h1>QIRA Assistant <span class="brand-badge">WHO Standard</span></h1>
+          <div class="brand-sub">ระบบประเมินความเสี่ยงเหตุการณ์ฉุกเฉินทางสาธารณสุขเบื้องต้น (Quick Initial Risk Assessment: QIRA)
           </div>
         </div>
       </div>
@@ -35,10 +35,29 @@
         <button id="btnPresetWuhan" class="btn btn-outline btn-sm" title="โหลดข้อมูลกรณีศึกษาตัวอย่าง">
           🧪 <span class="btn-text-desktop">ตัวอย่างเคสอู่ฮั่น</span><span class="btn-text-mobile">ตัวอย่าง</span>
         </button>
-        <a id="btnDocRef" href="Risk_Assessment_Reference_DDC.pdf" target="_blank" rel="noopener noreferrer"
-          class="btn btn-outline btn-sm" title="เปิดเอกสารอ้างอิงแนวทางการประเมินความเสี่ยง กรมควบคุมโรค (PDF)">
-          📖 <span class="btn-text-desktop">เอกสารอ้างอิง DDC</span><span class="btn-text-mobile">อ้างอิง</span>
-        </a>
+        <!-- Reference Documents Dropdown -->
+        <div class="dropdown-ref-wrapper" id="dropdownRefWrapper">
+          <button id="btnDocRefToggle" type="button" class="btn btn-outline btn-sm" aria-haspopup="true" aria-expanded="false" title="เปิดเอกสารอ้างอิงและคู่มือ">
+            📖 <span class="btn-text-desktop">เอกสารอ้างอิง</span><span class="btn-text-mobile">อ้างอิง</span> <span style="font-size: 0.65rem; margin-left: 2px;">▼</span>
+          </button>
+          <div id="menuDocRef" class="dropdown-ref-menu">
+            <a href="https://iris.who.int/server/api/core/bitstreams/7559a5ef-115f-4043-a3ea-3a4b060cc8fc/content" target="_blank" rel="noopener noreferrer" class="dropdown-ref-item">
+              <span style="font-size: 1.25rem;">🌐</span>
+              <div>
+                <div style="font-weight: 700; color: #0284c7;">WHO QIRA Guide</div>
+                <div style="font-size: 0.74rem; color: #64748b;">คู่มือมาตรฐานสากล (WHO IRIS)</div>
+              </div>
+            </a>
+            <div class="dropdown-ref-divider"></div>
+            <a href="Risk_Assessment_Reference_DDC.pdf" target="_blank" rel="noopener noreferrer" class="dropdown-ref-item">
+              <span style="font-size: 1.25rem;">📑</span>
+              <div>
+                <div style="font-weight: 700; color: #0f172a;">คู่มือ DDC (กรมควบคุมโรค)</div>
+                <div style="font-size: 0.74rem; color: #64748b;">เอกสารอ้างอิงภาษาไทย (PDF)</div>
+              </div>
+            </a>
+          </div>
+        </div>
         <button id="btnOpenSettings" class="btn btn-secondary btn-sm" title="ตั้งค่า Typhoon AI และ Google Sheets">
           ⚙️ <span class="btn-text-desktop">ตั้งค่า API & ชีต</span><span class="btn-text-mobile">ตั้งค่า</span>
         </button>
@@ -72,7 +91,7 @@
           <div class="step-badge-tag">ข้อมูลทั่วไปของเหตุการณ์ (Event Profile)</div>
           <div id="eventEditStatusTag"
             style="display: inline-flex; align-items: center; gap: 6px; background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225, 29, 72, 0.25); padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; color: var(--primary);">
-            <span><span id="eventModeLabel">🏷️ รหัสถัดไป: </span><strong id="activeEventIdText">IRA-001-2026</strong>
+            <span><span id="eventModeLabel">🏷️ รหัสถัดไป: </span><strong id="activeEventIdText">QIRA-001-2026</strong>
               <span id="eventSubNote" style="color: #64748b;">(สร้างใหม่อัตโนมัติ)</span></span>
             <button id="btnResetToNewCase" class="btn btn-outline btn-sm"
               style="display: none; padding: 1px 8px; font-size: 0.72rem; margin-left: 6px;"
@@ -132,7 +151,7 @@
         <!-- ================= QUESTION 1: High Threat Hazard ================= -->
         <div class="dynamic-question-card" id="card_q1">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 1 จากเกณฑ์ WHO IRA</span>
+            <span class="step-badge-tag">ข้อ 1 จากเกณฑ์ WHO QIRA</span>
             <h2>1. โรค/ภัยที่เป็นภัยคุกคามระดับสูง (High Threat Hazard)</h2>
             <p class="step-subtitle">
               ประเมินว่าเหตุการณ์นี้มีสาเหตุหรือสงสัยว่ามีสาเหตุจากเชื้อก่อโรคที่เป็นภัยคุกคามระดับสูงที่กำหนดไว้หรือไม่
@@ -247,7 +266,7 @@
         <!-- ================= QUESTION 2: Exposure ================= -->
         <div class="dynamic-question-card" id="card_q2">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 2 จากเกณฑ์ WHO IRA</span>
+            <span class="step-badge-tag">ข้อ 2 จากเกณฑ์ WHO QIRA</span>
             <h2>2. การสัมผัส (Exposure Assessment)</h2>
             <p class="step-subtitle">ประเมินว่าประชาชนยังคงมีการสัมผัส มีปฏิสัมพันธ์ หรือเข้าใกล้กับภัยนั้นๆ
               อย่างต่อเนื่องหรือไม่</p>
@@ -277,7 +296,7 @@
 
             <!-- Dynamic Skip Banner when Q2 is No -->
             <div class="flow-skip-banner" id="banner_q2_skip" style="display: none; margin-top: 14px;">
-              <span>⏭️ <strong>ตาม Flow ของ WHO IRA:</strong> เมื่อไม่มีการสัมผัสต่อเนื่องแล้ว ระบบจะ<strong>ข้ามข้อ 3
+              <span>⏭️ <strong>ตาม Flow ของ WHO QIRA:</strong> เมื่อไม่มีการสัมผัสต่อเนื่องแล้ว ระบบจะ<strong>ข้ามข้อ 3
                   และ 4.1</strong> และมุ่งไปยัง<strong>ข้อ 4.2 (มีผู้ได้รับผลกระทบสะสมจำนวนมากหรือไม่)</strong></span>
             </div>
 
@@ -347,7 +366,7 @@
         <!-- ================= QUESTION 3: Severity ================= -->
         <div class="dynamic-question-card" id="card_q3">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 3 จากเกณฑ์ WHO IRA</span>
+            <span class="step-badge-tag">ข้อ 3 จากเกณฑ์ WHO QIRA</span>
             <h2>3. ความรุนแรงทางคลินิก (Severity Assessment)</h2>
             <p class="step-subtitle">ประเมินความรุนแรงทางคลินิก การป่วยหนัก การเสียชีวิต และภาวะแทรกซ้อนของโรค</p>
           </div>
@@ -440,7 +459,7 @@
         <!-- ================= QUESTION 4.1: Future Spread Potential ================= -->
         <div class="dynamic-question-card" id="card_q4_1">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 4.1 จากเกณฑ์ WHO IRA</span>
+            <span class="step-badge-tag">ข้อ 4.1 จากเกณฑ์ WHO QIRA</span>
             <h2>4.1 ศักยภาพการแพร่ระบาดในอนาคต (Spread Potential)</h2>
             <p class="step-subtitle">ประเมินแนวโน้มว่าภัยจะแพร่กระจายในชุมชน หรือขยายไปยังพื้นที่อื่นๆ
               ในประเทศหรือต่างประเทศ</p>
@@ -534,7 +553,7 @@
         <!-- ================= QUESTION 4.2: Current Significant Affected ================= -->
         <div class="dynamic-question-card hidden" id="card_q4_2">
           <div class="step-title-area">
-            <span class="step-badge-tag">ข้อ 4.2 จากเกณฑ์ WHO IRA (กรณีไม่มีการสัมผัสแล้ว)</span>
+            <span class="step-badge-tag">ข้อ 4.2 จากเกณฑ์ WHO QIRA (กรณีไม่มีการสัมผัสแล้ว)</span>
             <h2>4.2 ขนาดประชากรที่ได้รับผลกระทบปัจจุบัน</h2>
             <p class="step-subtitle">พิจารณาขนาดของประชากรที่ได้รับผลกระทบ เมื่อการสัมผัสต้นตอโรคยุติลงแล้ว</p>
           </div>
@@ -748,7 +767,7 @@
             <div>
               <strong>ยังไม่ได้เชื่อมต่อ Google Sheet สำหรับจัดเก็บประวัติ:</strong>
               <div style="font-size: 0.8rem; color: var(--text-muted);">บันทึกประวัติการประเมินออนไลน์อัตโนมัติ
-                เพื่อการตรวจสอบย้อนกลับ (Audit Trail) ตามมาตรฐาน WHO IRA</div>
+                เพื่อการตรวจสอบย้อนกลับ (Audit Trail) ตามมาตรฐาน WHO QIRA</div>
             </div>
           </div>
           <div style="display: flex; gap: 8px;">
@@ -790,7 +809,7 @@
           </div>
           <div class="site-footer-sub">
             <span>เครื่องมือสนับสนุนการประเมินความเสี่ยงเบื้องต้นเหตุการณ์เฉียบพลันตามแนวทางองค์การอนามัยโลก (WHO Acute
-              Event Initial Risk Assessment)</span>
+              Event Quick Initial Risk Assessment: QIRA)</span>
           </div>
         </div>
       </footer>
@@ -830,12 +849,12 @@
           </div>
           <div class="verdict-desc" id="riskVerdictDesc">
             โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงตามเกณฑ์ WHO
-            IRA
+            QIRA
           </div>
           <!-- Missing Assessments Box: แสดงข้อที่ยังขาดการประเมินอย่างชัดเจน -->
           <div id="missingAssessmentsBox" class="missing-eval-box" style="display: none;"></div>
           <div class="verdict-drivers" id="riskVerdictDrivers">
-            <!-- Populated dynamically with WHO IRA criteria drivers -->
+            <!-- Populated dynamically with WHO QIRA criteria drivers -->
           </div>
         </div>
 
@@ -1044,7 +1063,7 @@
 
           <!-- Preset Selector Buttons -->
           <div class="prompt-preset-buttons" style="margin-bottom: 14px;">
-            <button type="button" class="btn-preset-select active" data-preset="who_standard">📘 มาตรฐาน WHO IRA (3
+            <button type="button" class="btn-preset-select active" data-preset="who_standard">📘 มาตรฐาน WHO QIRA (3
               ย่อหน้า)</button>
             <button type="button" class="btn-preset-select" data-preset="executive_brief">📗 สรุปด่วนผู้บริหาร
               (Executive)</button>
@@ -1162,7 +1181,7 @@
           <div style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-top: 2px;" id="delModalEventName">
             กำลังโหลด...</div>
           <div style="font-size: 0.78rem; color: #64748b; margin-top: 4px;">
-            รหัส: <strong id="delModalEventId">IRA-xxxxxx</strong> | วันที่: <span id="delModalDate">-</span>
+            รหัส: <strong id="delModalEventId">QIRA-xxxxxx</strong> | วันที่: <span id="delModalDate">-</span>
           </div>
         </div>
 

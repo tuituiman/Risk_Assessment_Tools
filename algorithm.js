@@ -1,17 +1,17 @@
 /**
  * ==============================================================================
- * IRA Assistant - WHO Initial Risk Assessment Algorithm Engine (algorithm.js)
+ * QIRA Assistant - WHO Quick Initial Risk Assessment Algorithm Engine (algorithm.js)
  * ==============================================================================
  * 
  * รับผิดชอบ:
- * 1. ตรรกะการประเมินความเสี่ยงตามกรอบแนวคิด WHO IRA (Slides 25-40)
+ * 1. ตรรกะการประเมินความเสี่ยงตามกรอบแนวคิด WHO QIRA
  * 2. การควบคุม Dynamic Decision Tree & Progressive Disclosure (แสดงทีละข้อ)
  * 3. การตรวจสอบความครบถ้วนของการประเมิน (Assessment Completeness)
  * 4. การจัดการสถานะระหว่างประเมิน (Incomplete State) ป้องกันการขึ้น Very High ทันที
  * ==============================================================================
  */
 
-// ตารางมาตรการตอบสนองและคุณลักษณะของแต่ละระดับความเสี่ยงตามเกณฑ์ WHO IRA
+// ตารางมาตรการตอบสนองและคุณลักษณะของแต่ละระดับความเสี่ยงตามเกณฑ์ WHO QIRA
 const RISK_ACTIONS = {
   'Incomplete': {
     th: 'อยู่ระหว่างการประเมิน',
@@ -78,7 +78,7 @@ const RISK_ACTIONS = {
 
 /**
 /**
- * หาข้อที่ยังขาดการประเมินตามเส้นทาง Decision Tree ของ WHO IRA
+ * หาข้อที่ยังขาดการประเมินตามเส้นทาง Decision Tree ของ WHO QIRA
  * @param {Object} answers - วัตถุเก็บคำตอบคำถามหลัก
  * @returns {Array<Object>} รายการข้อที่ยังขาด [{ cardId, code, title, desc }]
  */
@@ -414,7 +414,7 @@ function updateDynamicFlow(state) {
 }
 
 /**
- * คำนวณระดับความเสี่ยงตามอัลกอริทึม WHO Initial Risk Assessment
+ * คำนวณระดับความเสี่ยงตามอัลกอริทึม WHO Quick Initial Risk Assessment (QIRA)
  * @param {Object} state - Application State
  */
 function evaluateRiskAlgorithm(state) {
@@ -640,7 +640,7 @@ function updateRiskDisplay(state) {
 
   if (verdictDesc && verdictDrivers) {
     if (!result.isComplete) {
-      verdictDesc.textContent = 'โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงและมาตรการตามเกณฑ์ WHO IRA';
+      verdictDesc.textContent = 'โปรดตอบคำถามตามลำดับการประเมินความเสี่ยงด้านซ้ายให้ครบถ้วน เพื่อให้ระบบประมวลผลระดับความเสี่ยงและมาตรการตามเกณฑ์ WHO QIRA';
       verdictDrivers.innerHTML = `
         <div style="font-size: 0.82rem; color: #64748b; margin-top: 6px;">
           📍 สถานะปัจจุบัน: ยังตอบไม่ครบตาม Decision Tree (โปรดดูรายการข้อที่ต้องตอบด้านบน)
@@ -831,7 +831,7 @@ function updateDomainPill(elId, val) {
 /**
  * คำนวณสรุปผลคำถามข้อหลักอัตโนมัติจากเกณฑ์ย่อย (Sub-criteria to Main Domain)
  * รองรับรหัสโดเมนทั้งแบบ 'q1'/'d1', 'q2'/'d2', 'q3'/'d3', 'q4'/'d4', 'q5_1'/'d5'
- * ตามเกณฑ์มาตรฐาน WHO IRA (Slides 30, 32, 34, 36, 39)
+ * ตามเกณฑ์มาตรฐาน WHO QIRA
  */
 function calculateDomainFromSubAnswers(domain, state) {
   if (!state || !state.subAnswers) return;

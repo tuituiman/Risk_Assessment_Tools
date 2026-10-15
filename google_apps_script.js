@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- * Google Apps Script for IRA Assistant (WHO Initial Risk Assessment)
+ * Google Apps Script for QIRA Assistant (WHO Quick Initial Risk Assessment)
  * =====================================================================
  * 
  * คุณสมบัติ:
@@ -205,7 +205,7 @@ function getNextAssessmentIdFromSheet(sheet, year) {
   if (isNaN(y)) y = new Date().getFullYear();
   var ceYear = y > 2400 ? (y - 543) : y;
   var beYear = ceYear + 543;
-  var regex = new RegExp("^IRA\\s*-\\s*(\\d+)\\s*-\\s*(" + ceYear + "|" + beYear + ")$", "i");
+  var regex = new RegExp("^(?:QIRA|IRA)\\s*-\\s*(\\d+)\\s*-\\s*(" + ceYear + "|" + beYear + ")$", "i");
   if (lastRow > 1) {
     var idValues = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
     for (var i = 0; i < idValues.length; i++) {
@@ -221,7 +221,7 @@ function getNextAssessmentIdFromSheet(sheet, year) {
   }
   var nextSeq = maxSeq + 1;
   var padSeq = nextSeq < 1000 ? ("000" + nextSeq).slice(-3) : String(nextSeq);
-  return "IRA-" + padSeq + "-" + ceYear;
+  return "QIRA-" + padSeq + "-" + ceYear;
 }
 
 /**
@@ -565,7 +565,7 @@ function doGet(e) {
 
           if (rowId || rowEvent) {
             records.push({
-              id: rowId || ("IRA-" + (i + 1 < 1000 ? ("000" + (i + 1)).slice(-3) : String(i + 1)) + "-" + new Date().getFullYear()),
+              id: rowId || ("QIRA-" + (i + 1 < 1000 ? ("000" + (i + 1)).slice(-3) : String(i + 1)) + "-" + new Date().getFullYear()),
               timestamp: getVal("Timestamp", 1),
               assessmentDate: assessmentDateVal,
               eventName: rowEvent || "เหตุการณ์ประเมิน",
@@ -624,7 +624,7 @@ function doGet(e) {
     return ContentService
       .createTextOutput(JSON.stringify({
         "status": "success",
-        "message": "IRA Assistant Webhook is Active and Ready!",
+        "message": "QIRA Assistant Webhook is Active and Ready!",
         "hasUserSheet": true
       }))
       .setMimeType(ContentService.MimeType.JSON);
